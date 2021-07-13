@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: crossplane-system
+  name: civo-provider-secret
+type: Opaque
+data:
+  credentials: <replace with base64 encoded Civo API KEY>
+---
+apiVersion: civo.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: civo-provider
+spec:
+  region: lon1
+  credentials:
+    source: Secret
+    secretRef:
+      namespace: crossplane-system
+      name: civo-provider-secret
+      key: credentials
