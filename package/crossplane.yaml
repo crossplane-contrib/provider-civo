@@ -1,0 +1,11 @@
+apiVersion: meta.pkg.crossplane.io/v1alpha1
+kind: Provider
+metadata:
+  name: provider-civo
+  annotations:
+    descriptionShort: |
+      The Crossplane Civo provider enables management of managing resources on
+      Civo cloud. 
+spec:
+  controller:
+    image: crossplane/provider-civo-controller:VERSION
