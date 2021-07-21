@@ -1,23 +1,24 @@
 package civocli
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/civo/civogo"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
 var (
-	defaultTags      = ""
-	defaultNetworkID = "default"
+	defaultTags = ""
 )
 
+// CivoClient is a client for communicating with Civo.
 type CivoClient struct {
 	apikey       string
 	civoGoClient *civogo.Client
 }
 
+// NewCivoClient creates a new Civo client.
 func NewCivoClient(apiKey string, region string) (*CivoClient, error) {
 
 	if apiKey == "" {
@@ -39,6 +40,7 @@ func NewCivoClient(apiKey string, region string) (*CivoClient, error) {
 	}, nil
 }
 
+// GetK3sCluster gets a K3s cluster on Civo.
 func (c *CivoClient) GetK3sCluster(clusterName string) (*civogo.KubernetesCluster, error) {
 
 	kubernetesCluster, err := c.civoGoClient.FindKubernetesCluster(clusterName)
@@ -51,6 +53,7 @@ func (c *CivoClient) GetK3sCluster(clusterName string) (*civogo.KubernetesCluste
 	return kubernetesCluster, nil
 }
 
+// CreateNewK3sCluster creates a new K3s cluster on Civo.
 func (c *CivoClient) CreateNewK3sCluster(clusterName string, numberOfInstances int, instanceSize string, applications []string) error {
 
 	// Find the default network ID
@@ -79,6 +82,7 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string, numberOfInstances i
 	return nil
 }
 
+// DeleteK3sCluster deletes a k3s cluster on Civo.
 func (c *CivoClient) DeleteK3sCluster(name string) error {
 
 	kubernetesCluster, err := c.GetK3sCluster(name)

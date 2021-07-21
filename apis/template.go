@@ -20,8 +20,8 @@ package apis
 import (
 	"k8s.io/apimachinery/pkg/runtime"
 
-	clusterv1alpha1 "github.com/civo/civo-crossplane-provider/apis/civo/cluster/v1alpha1"
-	providerv1alpha1 "github.com/civo/civo-crossplane-provider/apis/civo/provider/v1alpha1"
+	clusterv1alpha1 "github.com/crossplane-contrib/provider-civo/apis/civo/cluster/v1alpha1"
+	providerv1alpha1 "github.com/crossplane-contrib/provider-civo/apis/civo/provider/v1alpha1"
 )
 
 func init() {

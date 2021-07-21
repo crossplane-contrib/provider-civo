@@ -29,9 +29,9 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 
-	"github.com/civo/civo-crossplane-provider/apis"
-	civokubernetes "github.com/civo/civo-crossplane-provider/internal/controller/civokubernetes"
-	civoprovider "github.com/civo/civo-crossplane-provider/internal/controller/provider"
+	"github.com/crossplane-contrib/provider-civo/apis"
+	civokubernetes "github.com/crossplane-contrib/provider-civo/internal/controller/civokubernetes"
+	civoprovider "github.com/crossplane-contrib/provider-civo/internal/controller/provider"
 )
 
 func init() {
