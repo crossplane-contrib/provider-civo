@@ -1,4 +1,4 @@
-module github.com/civo/civo-crossplane-provider
+module github.com/crossplane-contrib/provider-civo
 
 go 1.16
 

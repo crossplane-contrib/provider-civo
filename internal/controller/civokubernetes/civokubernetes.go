@@ -1,20 +1,20 @@
-package CivoKubernetes
+package civokubernetes
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/civo/civo-crossplane-provider/apis/civo/cluster/v1alpha1"
-	v1alpha1provider "github.com/civo/civo-crossplane-provider/apis/civo/provider/v1alpha1"
-	"github.com/civo/civo-crossplane-provider/pkg/civocli"
+	"github.com/crossplane-contrib/provider-civo/apis/civo/cluster/v1alpha1"
+	v1alpha1provider "github.com/crossplane-contrib/provider-civo/apis/civo/provider/v1alpha1"
+	"github.com/crossplane-contrib/provider-civo/pkg/civocli"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -40,6 +40,7 @@ type external struct {
 	civoClient *civocli.CivoClient
 }
 
+// Setup sets up a Civo Kubernetes controller.
 func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	name := managed.ControllerName(v1alpha1.CivoKubernetesGroupKind)
 
@@ -210,7 +211,9 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 			Namespace: cr.Spec.ConnectionDetails.ConnectionSecretNamespace,
 		},
 	}
-	e.kube.Delete(ctx, connectionSecret)
+	if err := e.kube.Delete(ctx, connectionSecret); err != nil {
+		return err
+	}
 	// ------------------------------------------------
 	cr.Status.Message = deletionMessage
 	cr.SetConditions(xpv1.Deleting())
@@ -225,15 +228,15 @@ func connectionDetails(kubeconfig []byte, name string) (managed.ConnectionDetail
 	}
 	kctx, ok := kcfg.Contexts[name]
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("context configuration is not found for cluster: %s", name))
+		return nil, errors.Errorf("context configuration is not found for cluster: %s", name)
 	}
 	cluster, ok := kcfg.Clusters[kctx.Cluster]
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("cluster configuration is not found: %s", kctx.Cluster))
+		return nil, errors.Errorf("cluster configuration is not found: %s", kctx.Cluster)
 	}
 	auth, ok := kcfg.AuthInfos[kctx.AuthInfo]
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("auth-info configuration is not found: %s", kctx.AuthInfo))
+		return nil, errors.Errorf("auth-info configuration is not found: %s", kctx.AuthInfo)
 	}
 
 	return managed.ConnectionDetails{
