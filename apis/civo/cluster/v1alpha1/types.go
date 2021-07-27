@@ -58,12 +58,12 @@ type CivoKubernetesStatus struct {
 // +kubebuilder:object:root=true
 
 // A CivoKubernetes is an example API type.
-// +kubebuilder:subresource:status
-// +kubebuilder:printcolumn:name="STATUS",type="string",JSONPath=".status.bindingPhase"
-// +kubebuilder:printcolumn:name="STATE",type="string",JSONPath=".status.atProvider.state"
-// +kubebuilder:printcolumn:name="AGE",type="date",JSONPath=".metadata.creationTimestamp"
+// +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
+// +kubebuilder:printcolumn:name="MESSAGE",type="string",JSONPath=".status.message"
+// +kubebuilder:printcolumn:name="APPLICATIONS",type="string",JSONPath=".spec.applications"
 // Please replace `PROVIDER-NAME` with your actual provider name, like `aws`, `azure`, `gcp`, `alibaba`
 // +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,civo}
+// +kubebuilder:subresource:status
 type CivoKubernetes struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
