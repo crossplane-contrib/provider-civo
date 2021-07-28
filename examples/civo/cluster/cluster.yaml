@@ -1,13 +1,13 @@
 kind: CivoKubernetes
 apiVersion: cluster.civo.crossplane.io/v1alpha1
 metadata: 
-  name: example-civo-cluster
+  name: test-crossplane
 spec:
-  name: test-cluster
-  instances: 2
+  name: test-crossplane
+  instances: 3
   size: g3.k3s.small
   applications: 
-    - "Flux"
+    - "argo-cd"
     - "prometheus-operator"
   connectionDetails:
     connectionSecretNamePrefix: "cluster-details"

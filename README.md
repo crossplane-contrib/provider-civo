@@ -33,14 +33,8 @@ Set-up a Kubernetes cluster with Crossplane installed. The instructions can be f
 
 To add the Civo Provider Configuration Package, run:
 ```
-TODO
+kubectl crossplane install provider crossplane/provider-civo:main
 ```
-
-Alternatively, you can apply the Configuration Package by running the Makefile while being connected to the cluster with the Corssplane resources installed:
-```
-make run
-```
-
 In this case, we are going to follow the resources in the example repostory. 
 
 Before creating a Provider resource, edit the API key in [provider.yaml](examples/civo/provider/provider.yaml). You can find the API key in your Civo account within Account>Settings>Security.
