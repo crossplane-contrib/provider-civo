@@ -26,7 +26,7 @@ provider-civo adheres to the same [Code of Conduct](https://github.com/crossplan
 ### Prerequisites
 * [kubectl installed](https://kubernetes.io/docs/tasks/tools/#kubectl)
 * [KinD installed](https://kind.sigs.k8s.io/docs/user/quick-start/) (optionally another Kubernetes Cluster)
-* [Helm installed9](https://helm.sh/) 
+* [Helm installed](https://helm.sh/) 
 * [yq installed](https://mikefarah.gitbook.io/yq/) 
 
 Set-up a Kubernetes cluster with Crossplane installed. The instructions can be found in the official [Crossplane documentation](https://crossplane.io/docs/v1.3/getting-started/install-configure.html#start-with-a-self-hosted-crossplane).
