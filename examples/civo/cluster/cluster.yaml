@@ -4,7 +4,7 @@ metadata:
   name: test-crossplane
 spec:
   name: test-crossplane
-  instances: 3
+  instances: 5
   size: g3.k3s.small
   applications: 
     - "argo-cd"

@@ -4,7 +4,9 @@ import (
 	"strings"
 
 	"github.com/civo/civogo"
+	providerCivoCluster "github.com/crossplane-contrib/provider-civo/apis/civo/cluster/v1alpha1"
 	"github.com/crossplane-contrib/provider-civo/apis/civo/instance/v1alpha1"
+	v1alpha1provider "github.com/crossplane-contrib/provider-civo/apis/civo/provider/v1alpha1"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -182,12 +184,14 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string, numberOfInstances i
 	}
 
 	cfg := &civogo.KubernetesClusterConfig{
-		Name:            clusterName,
-		Tags:            defaultTags,
-		NetworkID:       network.ID,
-		NumTargetNodes:  numberOfInstances,
-		TargetNodesSize: instanceSize,
-		Applications:    strings.Join(applications, ","),
+		Region:            c.civoGoClient.Region,
+		Name:              clusterName,
+		Tags:              defaultTags,
+		NetworkID:         network.ID,
+		NumTargetNodes:    numberOfInstances,
+		TargetNodesSize:   instanceSize,
+		KubernetesVersion: "1.20.0+k3s1",
+		Applications:      "",
 	}
 
 	kubernetesCluster, err := c.civoGoClient.NewKubernetesClusters(cfg)
@@ -199,6 +203,18 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string, numberOfInstances i
 	log.Debugf("Created Kubernetes cluster %s with %d instances", kubernetesCluster.Name, len(kubernetesCluster.Instances))
 
 	return nil
+}
+
+// UpdateK3sCluster updates a K3s cluster on Civo.
+func (c *CivoClient) UpdateK3sCluster(desiredCluster *providerCivoCluster.CivoKubernetes, provider *v1alpha1provider.ProviderConfig) error {
+
+	_, err := c.civoGoClient.UpdateKubernetesCluster(desiredCluster.Spec.Name, &civogo.KubernetesClusterConfig{
+		NumTargetNodes: desiredCluster.Spec.Instances,
+		Applications:   strings.Join(desiredCluster.Spec.Applications, ","),
+		Region:         provider.Spec.Region,
+	})
+
+	return err
 }
 
 // DeleteK3sCluster deletes a k3s cluster on Civo.

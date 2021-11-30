@@ -142,6 +142,11 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 			}
 		}
 		// --------------------------------------------
+		_, err = e.Update(ctx, mg)
+		if err != nil {
+			log.Warnf("update error:%s ", err.Error())
+		}
+		// --------------------------------------------
 		cr.SetConditions(xpv1.Available())
 		return managed.ExternalObservation{
 			ResourceExists:    true,
@@ -185,6 +190,34 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 }
 
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
+	currentCluster, ok := mg.(*v1alpha1.CivoKubernetes)
+	if !ok {
+		return managed.ExternalUpdate{}, errors.New("invalid object")
+	}
+	civoCluster, err := e.civoClient.GetK3sCluster(currentCluster.Spec.Name)
+	if err != nil {
+		return managed.ExternalUpdate{}, err
+	}
+	if civoCluster == nil {
+		return managed.ExternalUpdate{}, nil
+	}
+
+	providerConfig := &v1alpha1provider.ProviderConfig{}
+
+	err = e.kube.Get(ctx, types.NamespacedName{
+		Name: currentCluster.Spec.ProviderConfigReference.Name}, providerConfig)
+
+	if err != nil {
+		return managed.ExternalUpdate{}, err
+	}
+
+	// Currently we will only support a resize operation
+	if currentCluster.Spec.Instances != len(civoCluster.Instances) {
+		if err := e.civoClient.UpdateK3sCluster(currentCluster, providerConfig); err != nil {
+			return managed.ExternalUpdate{}, err
+		}
+	}
+
 	return managed.ExternalUpdate{}, nil
 }
 
