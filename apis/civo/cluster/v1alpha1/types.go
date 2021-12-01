@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/civo/civogo"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
@@ -41,11 +42,10 @@ type CivoKubernetesConnectionDetails struct {
 // A CivoKubernetesSpec defines the desired state of a CivoKubernetes.
 type CivoKubernetesSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
-	Name              string                          `json:"name"`
-	Instances         int                             `json:"instances"`
-	Size              string                          `json:"size"`
-	Applications      []string                        `json:"applications,omitempty"`
-	ConnectionDetails CivoKubernetesConnectionDetails `json:"connectionDetails"`
+	Name              string                               `json:"name"`
+	Pools             []civogo.KubernetesClusterPoolConfig `json:"pools"`
+	Applications      []string                             `json:"applications,omitempty"`
+	ConnectionDetails CivoKubernetesConnectionDetails      `json:"connectionDetails"`
 }
 
 // A CivoKubernetesStatus represents the observed state of a CivoKubernetes.

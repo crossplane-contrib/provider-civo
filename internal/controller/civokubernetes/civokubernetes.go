@@ -177,7 +177,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, nil
 	}
 	// Create or Update
-	err = e.civoClient.CreateNewK3sCluster(cr.Spec.Name, cr.Spec.Instances, cr.Spec.Size, cr.Spec.Applications)
+	err = e.civoClient.CreateNewK3sCluster(cr.Spec.Name, cr.Spec.Pools, cr.Spec.Applications)
 	if err != nil {
 		return managed.ExternalCreation{}, err
 	}
@@ -190,30 +190,32 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 }
 
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	currentCluster, ok := mg.(*v1alpha1.CivoKubernetes)
+	desiredCivoCluster, ok := mg.(*v1alpha1.CivoKubernetes)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New("invalid object")
 	}
-	civoCluster, err := e.civoClient.GetK3sCluster(currentCluster.Spec.Name)
+	remoteCivoCluster, err := e.civoClient.GetK3sCluster(desiredCivoCluster.Spec.Name)
 	if err != nil {
 		return managed.ExternalUpdate{}, err
 	}
-	if civoCluster == nil {
+	if remoteCivoCluster == nil {
 		return managed.ExternalUpdate{}, nil
 	}
 
 	providerConfig := &v1alpha1provider.ProviderConfig{}
 
 	err = e.kube.Get(ctx, types.NamespacedName{
-		Name: currentCluster.Spec.ProviderConfigReference.Name}, providerConfig)
+		Name: desiredCivoCluster.Spec.ProviderConfigReference.Name}, providerConfig)
 
 	if err != nil {
 		return managed.ExternalUpdate{}, err
 	}
 
-	// Currently we will only support a resize operation
-	if currentCluster.Spec.Instances != len(civoCluster.Instances) {
-		if err := e.civoClient.UpdateK3sCluster(currentCluster, providerConfig); err != nil {
+	if len(desiredCivoCluster.Spec.Pools) != len(remoteCivoCluster.Pools) {
+
+		log.Debug("Pools are not equal")
+		//TODO: Set region in the civo client once to avoid passing the providerConfig
+		if err := e.civoClient.UpdateK3sCluster(desiredCivoCluster, remoteCivoCluster, providerConfig); err != nil {
 			return managed.ExternalUpdate{}, err
 		}
 	}

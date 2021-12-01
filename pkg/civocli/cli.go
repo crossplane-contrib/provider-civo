@@ -175,7 +175,8 @@ func (c *CivoClient) GetK3sCluster(clusterName string) (*civogo.KubernetesCluste
 }
 
 // CreateNewK3sCluster creates a new K3s cluster on Civo.
-func (c *CivoClient) CreateNewK3sCluster(clusterName string, numberOfInstances int, instanceSize string, applications []string) error {
+func (c *CivoClient) CreateNewK3sCluster(clusterName string,
+	pools []civogo.KubernetesClusterPoolConfig, applications []string) error {
 
 	// Find the default network ID
 	network, err := c.civoGoClient.GetDefaultNetwork()
@@ -183,13 +184,19 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string, numberOfInstances i
 		return err
 	}
 
+	if len(pools) < 1 {
+		return errors.New("pool is required for CivoKubernetes cluster creation.")
+	}
+	// Currently we will only define the initial pool entries to be created with the cluster
+	// This is due to limitations in the API
+
 	cfg := &civogo.KubernetesClusterConfig{
 		Region:            c.civoGoClient.Region,
 		Name:              clusterName,
 		Tags:              defaultTags,
 		NetworkID:         network.ID,
-		NumTargetNodes:    numberOfInstances,
-		TargetNodesSize:   instanceSize,
+		NumTargetNodes:    pools[0].Count,
+		TargetNodesSize:   pools[0].Size,
 		KubernetesVersion: "1.20.0+k3s1",
 		Applications:      "",
 	}
@@ -206,13 +213,13 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string, numberOfInstances i
 }
 
 // UpdateK3sCluster updates a K3s cluster on Civo.
-func (c *CivoClient) UpdateK3sCluster(desiredCluster *providerCivoCluster.CivoKubernetes, provider *v1alpha1provider.ProviderConfig) error {
+func (c *CivoClient) UpdateK3sCluster(desiredCluster *providerCivoCluster.CivoKubernetes,
+	remoteCivoCluster *civogo.KubernetesCluster, provider *v1alpha1provider.ProviderConfig) error {
 
-	_, err := c.civoGoClient.UpdateKubernetesCluster(desiredCluster.Spec.Name, &civogo.KubernetesClusterConfig{
-		NumTargetNodes: desiredCluster.Spec.Instances,
-		Applications:   strings.Join(desiredCluster.Spec.Applications, ","),
-		Region:         provider.Spec.Region,
-	})
+	_, err := c.civoGoClient.UpdateKubernetesCluster(desiredCluster.Spec.Name,
+		&civogo.KubernetesClusterConfig{
+			Pools: desiredCluster.Spec.Pools,
+		})
 
 	return err
 }
