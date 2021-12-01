@@ -185,7 +185,7 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string,
 	}
 
 	if len(pools) < 1 {
-		return errors.New("pool is required for CivoKubernetes cluster creation.")
+		return errors.New("pool is required for CivoKubernetes cluster creation")
 	}
 	// Currently we will only define the initial pool entries to be created with the cluster
 	// This is due to limitations in the API

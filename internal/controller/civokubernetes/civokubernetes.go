@@ -95,6 +95,7 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	}, nil
 }
 
+//nolint
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	cr, ok := mg.(*v1alpha1.CivoKubernetes)
 	if !ok {
