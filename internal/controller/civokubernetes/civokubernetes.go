@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/civo/civogo"
 	"github.com/crossplane-contrib/provider-civo/apis/civo/cluster/v1alpha1"
 	v1alpha1provider "github.com/crossplane-contrib/provider-civo/apis/civo/provider/v1alpha1"
 	"github.com/crossplane-contrib/provider-civo/pkg/civocli"
@@ -212,7 +213,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, err
 	}
 
-	if len(desiredCivoCluster.Spec.Pools) != len(remoteCivoCluster.Pools) {
+	if len(desiredCivoCluster.Spec.Pools) != len(remoteCivoCluster.Pools) || !arePoolsEqual(desiredCivoCluster, remoteCivoCluster) {
 
 		log.Debug("Pools are not equal")
 		//TODO: Set region in the civo client once to avoid passing the providerConfig
@@ -254,6 +255,21 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	cr.Status.Message = deletionMessage
 	cr.SetConditions(xpv1.Deleting())
 	return e.civoClient.DeleteK3sCluster(civoCluster.Name)
+}
+
+func arePoolsEqual(desiredCivoCluster *v1alpha1.CivoKubernetes, remoteCivoCluster *civogo.KubernetesCluster) bool {
+	for _, desirePool := range desiredCivoCluster.Spec.Pools {
+		for _, remotePool := range remoteCivoCluster.Pools {
+			if desirePool.ID == remotePool.ID {
+				if desirePool.Count != remotePool.Count {
+					return false
+				}
+			}
+
+		}
+	}
+
+	return true
 }
 
 func connectionDetails(kubeconfig []byte, name string) (managed.ConnectionDetails, error) {
