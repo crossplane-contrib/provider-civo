@@ -46,6 +46,12 @@ type CivoKubernetesSpec struct {
 	Pools             []civogo.KubernetesClusterPoolConfig `json:"pools"`
 	Applications      []string                             `json:"applications,omitempty"`
 	ConnectionDetails CivoKubernetesConnectionDetails      `json:"connectionDetails"`
+	// +optional
+	// +kubebuilder:validation:Enum=flannel,cilium
+	// +kubebuilder:default=flannel
+	// +immutable
+	// NOTE: This can only be set at creation time. Changing this value after creation will not update the CNI.
+	CNIPlugin *string `json:"cni,omitempty"`
 }
 
 // A CivoKubernetesStatus represents the observed state of a CivoKubernetes.
