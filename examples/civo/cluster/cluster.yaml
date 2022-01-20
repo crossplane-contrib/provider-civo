@@ -6,10 +6,10 @@ spec:
   name: test-crossplane
   pools:
     - id: "8382e422-dcdd-461f-afb4-2ab67f171c3e"
-      count: 4
+      count: 2
       size: g3.k3s.small
     - id: "8482f422-dcdd-461g-afb4-2ab67f171c3e"
-      count: 3
+      count: 1
       size: g3.k3s.small
   applications: 
     - "argo-cd"

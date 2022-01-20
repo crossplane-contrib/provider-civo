@@ -195,9 +195,8 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string,
 		Name:              clusterName,
 		Tags:              defaultTags,
 		NetworkID:         network.ID,
-		NumTargetNodes:    pools[0].Count,
-		TargetNodesSize:   pools[0].Size,
-		KubernetesVersion: "1.20.0+k3s1",
+		KubernetesVersion: "1.20.0-k3s1",
+		Pools:             pools,
 		Applications:      "",
 	}
 
@@ -207,7 +206,7 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string,
 		return err
 	}
 
-	log.Debugf("Created Kubernetes cluster %s with %d instances", kubernetesCluster.Name, len(kubernetesCluster.Instances))
+	log.Debugf("Created Kubernetes cluster %s with %d node pools", kubernetesCluster.Name, len(pools))
 
 	return nil
 }

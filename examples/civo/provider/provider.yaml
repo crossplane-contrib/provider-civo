@@ -5,7 +5,7 @@ metadata:
   name: civo-provider-secret
 type: Opaque
 data:
-  credentials: ""
+  # credentials:  <replace with base64 encoded Civo API KEY>
 ---
 apiVersion: civo.crossplane.io/v1alpha1
 kind: ProviderConfig
