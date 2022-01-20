@@ -47,7 +47,7 @@ type CivoKubernetesSpec struct {
 	Applications      []string                             `json:"applications,omitempty"`
 	ConnectionDetails CivoKubernetesConnectionDetails      `json:"connectionDetails"`
 	// +optional
-	// +kubebuilder:validation:Enum=flannel,cilium
+	// +kubebuilder:validation:Enum=flannel;cilium
 	// +kubebuilder:default=flannel
 	// +immutable
 	// NOTE: This can only be set at creation time. Changing this value after creation will not update the CNI.
