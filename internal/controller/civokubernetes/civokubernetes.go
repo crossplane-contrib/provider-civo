@@ -64,7 +64,6 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 }
 
 func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-
 	cluster, ok := mg.(*v1alpha1.CivoKubernetes)
 	if !ok {
 		return nil, errors.New("managed resource is not a FavouriteDBInstance")
