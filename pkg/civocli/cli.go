@@ -176,7 +176,7 @@ func (c *CivoClient) GetK3sCluster(clusterName string) (*civogo.KubernetesCluste
 
 // CreateNewK3sCluster creates a new K3s cluster on Civo.
 func (c *CivoClient) CreateNewK3sCluster(clusterName string,
-	pools []civogo.KubernetesClusterPoolConfig, applications []string) error {
+	pools []civogo.KubernetesClusterPoolConfig, applications []string, cni *string) error {
 
 	// Find the default network ID
 	network, err := c.civoGoClient.GetDefaultNetwork()
@@ -189,6 +189,12 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string,
 	}
 	// Currently we will only define the initial pool entries to be created with the cluster
 	// This is due to limitations in the API
+	var cp string
+	if cni != nil {
+		cp = *cni
+	} else {
+		cp = "flannel"
+	}
 
 	cfg := &civogo.KubernetesClusterConfig{
 		Region:            c.civoGoClient.Region,
@@ -198,6 +204,7 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string,
 		KubernetesVersion: "1.20.0-k3s1",
 		Pools:             pools,
 		Applications:      "",
+		CNIPlugin:         cp,
 	}
 
 	kubernetesCluster, err := c.civoGoClient.NewKubernetesClusters(cfg)

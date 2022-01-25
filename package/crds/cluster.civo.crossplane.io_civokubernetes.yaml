@@ -48,6 +48,13 @@ spec:
                 items:
                   type: string
                 type: array
+              cni:
+                default: flannel
+                description: 'NOTE: This can only be set at creation time. Changing this value after creation will not update the CNI.'
+                enum:
+                - flannel
+                - cilium
+                type: string
               connectionDetails:
                 description: CivoKubernetesConnectionDetails is the desired output secret to store connection information
                 properties:

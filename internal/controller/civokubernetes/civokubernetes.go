@@ -178,7 +178,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, nil
 	}
 	// Create or Update
-	err = e.civoClient.CreateNewK3sCluster(cr.Spec.Name, cr.Spec.Pools, cr.Spec.Applications)
+	err = e.civoClient.CreateNewK3sCluster(cr.Spec.Name, cr.Spec.Pools, cr.Spec.Applications, cr.Spec.CNIPlugin)
 	if err != nil {
 		return managed.ExternalCreation{}, err
 	}
