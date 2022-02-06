@@ -44,8 +44,10 @@ type CivoKubernetesSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
 	Name              string                               `json:"name"`
 	Pools             []civogo.KubernetesClusterPoolConfig `json:"pools"`
-	Applications      []string                             `json:"applications,omitempty"`
-	ConnectionDetails CivoKubernetesConnectionDetails      `json:"connectionDetails"`
+	// +optional
+	// A list of applications to install from civo marketplace, To remove default application, prefix it with a "-" e.g. "-Traefik"
+	Applications      []string                        `json:"applications,omitempty"`
+	ConnectionDetails CivoKubernetesConnectionDetails `json:"connectionDetails"`
 	// +optional
 	// +kubebuilder:validation:Enum=flannel;cilium
 	// +kubebuilder:default=flannel

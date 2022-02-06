@@ -203,7 +203,7 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string,
 		NetworkID:         network.ID,
 		KubernetesVersion: "1.20.0-k3s1",
 		Pools:             pools,
-		Applications:      "",
+		Applications:      strings.Join(applications, ","),
 		CNIPlugin:         cp,
 	}
 
