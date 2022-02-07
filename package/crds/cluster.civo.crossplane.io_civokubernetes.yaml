@@ -45,6 +45,7 @@ spec:
             description: A CivoKubernetesSpec defines the desired state of a CivoKubernetes.
             properties:
               applications:
+                description: A list of applications to install from civo marketplace, To remove default application, prefix it with a "-" e.g. "-Traefik"
                 items:
                   type: string
                 type: array
