@@ -8,4 +8,4 @@ metadata:
       Civo cloud. 
 spec:
   controller:
-    image: crossplane/provider-civo-controller:VERSION
+    image: crossplane/provider-civo-controller-amd64:main

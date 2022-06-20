@@ -5,6 +5,7 @@
 This provider-civo repository is the Crossplane infrastructure provider for [Civo](https://www.civo.com). 
 The provider that is built from the source code in this repository can be installed into a Crossplane control plane and adds the following new functionality:
 - CivoKubernetes
+- CivoInstances
 
 ### Contributing
 provider-civo is a community driven project and we welcome contributions. See the Crossplane Contributing guidelines to get started. Please look at [dev.md] for local development
@@ -33,8 +34,13 @@ Set-up a Kubernetes cluster with Crossplane installed. The instructions can be f
 
 To add the Civo Provider Configuration Package, run:
 ```
-kubectl crossplane install provider crossplane/provider-civo:main
+kubectl crossplane install provider crossplane/provider-civo-amd64:main
 ```
+If you're on a ARM cluster, you can run:
+```
+kubectl crossplane install provider crossplane/provider-civo-arm64:main
+```
+
 In this case, we are going to follow the resources in the example repostory. 
 
 Before creating a Provider resource, edit the API key in [provider.yaml](examples/civo/provider/provider.yaml). You can find the API key in your Civo account within Account>Settings>Security.
