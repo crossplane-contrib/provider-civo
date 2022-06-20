@@ -45,7 +45,7 @@ type CivoKubernetesSpec struct {
 	Name              string                               `json:"name"`
 	Pools             []civogo.KubernetesClusterPoolConfig `json:"pools"`
 	// +optional
-	// A list of applications to install from civo marketplace, To remove default application, prefix it with a "-" e.g. "-Traefik"
+	// A list of applications to install from civo marketplace.
 	Applications      []string                        `json:"applications,omitempty"`
 	ConnectionDetails CivoKubernetesConnectionDetails `json:"connectionDetails"`
 	// +optional
@@ -54,6 +54,12 @@ type CivoKubernetesSpec struct {
 	// +immutable
 	// NOTE: This can only be set at creation time. Changing this value after creation will not update the CNI.
 	CNIPlugin *string `json:"cni,omitempty"`
+	// +optional
+	// +kubebuilder:default="1.22.2-k3s1"
+	// If not set, the default kubernetes version(1.22.2-k31) will be used.
+	// If set, the value must be a valid kubernetes version, you can use the following command to get the valid versions: `civo k3s versions`
+	// Changing the version to a higher version will upgrade the cluster. Note that this may cause breaking changes to the Kubernetes API so please check kubernetes deprecations/mitigations before upgrading.
+	Version *string `json:"version,omitempty"`
 }
 
 // A CivoKubernetesStatus represents the observed state of a CivoKubernetes.

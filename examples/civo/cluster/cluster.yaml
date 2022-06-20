@@ -14,9 +14,7 @@ spec:
   applications: 
     - "argo-cd"
     - "prometheus-operator"
-  # To remove default installed application
-  # - "-Traefik"
-  # - "-metrics-server"
+  version: "1.22.2-k3s1"
   connectionDetails:
     connectionSecretNamePrefix: "cluster-details"
     connectionSecretNamespace: "default"
