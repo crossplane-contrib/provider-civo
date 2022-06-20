@@ -178,7 +178,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, nil
 	}
 	// Create or Update
-	err = e.civoClient.CreateNewK3sCluster(cr.Spec.Name, cr.Spec.Pools, cr.Spec.Applications, cr.Spec.CNIPlugin)
+	err = e.civoClient.CreateNewK3sCluster(cr.Spec.Name, cr.Spec.Pools, cr.Spec.Applications, cr.Spec.CNIPlugin, cr.Spec.Version)
 	if err != nil {
 		return managed.ExternalCreation{}, err
 	}
@@ -190,6 +190,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	}, nil
 }
 
+// nolint
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	desiredCivoCluster, ok := mg.(*v1alpha1.CivoKubernetes)
 	if !ok {
@@ -207,7 +208,6 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	err = e.kube.Get(ctx, types.NamespacedName{
 		Name: desiredCivoCluster.Spec.ProviderConfigReference.Name}, providerConfig)
-
 	if err != nil {
 		return managed.ExternalUpdate{}, err
 	}
@@ -218,6 +218,15 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		//TODO: Set region in the civo client once to avoid passing the providerConfig
 		if err := e.civoClient.UpdateK3sCluster(desiredCivoCluster, remoteCivoCluster, providerConfig); err != nil {
 			return managed.ExternalUpdate{}, err
+		}
+	}
+
+	if desiredCivoCluster.Spec.Version != nil {
+		if *desiredCivoCluster.Spec.Version > remoteCivoCluster.Version {
+			log.Info("Updating cluster version")
+			if err := e.civoClient.UpdateK3sClusterVersion(desiredCivoCluster, remoteCivoCluster, providerConfig); err != nil {
+				return managed.ExternalUpdate{}, err
+			}
 		}
 	}
 

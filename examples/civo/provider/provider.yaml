@@ -5,14 +5,14 @@ metadata:
   name: civo-provider-secret
 type: Opaque
 data:
-  # credentials:  <replace with base64 encoded Civo API KEY>
+  # credentials: <replace with base64 encoded Civo API KEY>
 ---
 apiVersion: civo.crossplane.io/v1alpha1
 kind: ProviderConfig
 metadata:
   name: civo-provider
 spec:
-  region: lon1
+  region: fra1
   credentials:
     source: Secret
     secretRef:

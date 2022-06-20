@@ -7,7 +7,7 @@ The provider that is built from the source code in this repository can be instal
 - CivoKubernetes
 
 ### Contributing
-provider-civo is a community driven project and we welcome contributions. See the Crossplane Contributing guidelines to get started.
+provider-civo is a community driven project and we welcome contributions. See the Crossplane Contributing guidelines to get started. Please look at [dev.md] for local development
 
 ### Contact
 

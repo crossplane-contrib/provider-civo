@@ -176,7 +176,7 @@ func (c *CivoClient) GetK3sCluster(clusterName string) (*civogo.KubernetesCluste
 
 // CreateNewK3sCluster creates a new K3s cluster on Civo.
 func (c *CivoClient) CreateNewK3sCluster(clusterName string,
-	pools []civogo.KubernetesClusterPoolConfig, applications []string, cni *string) error {
+	pools []civogo.KubernetesClusterPoolConfig, applications []string, cni *string, version *string) error {
 
 	// Find the default network ID
 	network, err := c.civoGoClient.GetDefaultNetwork()
@@ -196,19 +196,23 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string,
 		cp = "flannel"
 	}
 
+	ver := "1.22.2-k3s1"
+	if version != nil {
+		ver = *version
+	}
+
 	cfg := &civogo.KubernetesClusterConfig{
 		Region:            c.civoGoClient.Region,
 		Name:              clusterName,
 		Tags:              defaultTags,
 		NetworkID:         network.ID,
-		KubernetesVersion: "1.20.0-k3s1",
+		KubernetesVersion: ver,
 		Pools:             pools,
 		Applications:      strings.Join(applications, ","),
 		CNIPlugin:         cp,
 	}
 
 	kubernetesCluster, err := c.civoGoClient.NewKubernetesClusters(cfg)
-
 	if err != nil {
 		return err
 	}
@@ -225,6 +229,18 @@ func (c *CivoClient) UpdateK3sCluster(desiredCluster *providerCivoCluster.CivoKu
 	_, err := c.civoGoClient.UpdateKubernetesCluster(desiredCluster.Spec.Name,
 		&civogo.KubernetesClusterConfig{
 			Pools: desiredCluster.Spec.Pools,
+		})
+
+	return err
+}
+
+// UpdateK3sClusterVersion updates a K3s cluster version on Civo.
+func (c *CivoClient) UpdateK3sClusterVersion(desiredCluster *providerCivoCluster.CivoKubernetes,
+	remoteCivoCluster *civogo.KubernetesCluster, provider *v1alpha1provider.ProviderConfig) error {
+
+	_, err := c.civoGoClient.UpdateKubernetesCluster(desiredCluster.Spec.Name,
+		&civogo.KubernetesClusterConfig{
+			KubernetesVersion: *desiredCluster.Spec.Version,
 		})
 
 	return err
