@@ -10,5 +10,5 @@ guidelines and responsibilities for the steering committee and maintainers.
 
 ## Maintainers
 
-* Alex Jones <alex@civo.com> ([AlexJones](https://github.com/AlexsJones))
-* Anais Urlichs <anais@civo.com> ([AnaisUrlichs](https://github.com/AnaisUrlichs))
+* Dinesh Marjekar <dinesh@civo.com> 
+* Harsh Thakur <harsh@civo.com>
