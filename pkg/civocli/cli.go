@@ -259,3 +259,45 @@ func (c *CivoClient) DeleteK3sCluster(name string) error {
 	}
 	return err
 }
+
+// CreateNewIP creates a new civo IP.
+func (c *CivoClient) CreateNewIP(name string) (*civogo.IP, error) {
+	result, err := c.civoGoClient.NewIP(&civogo.CreateIPRequest{
+		Name: name,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// GetIP gets a civo IP.
+func (c *CivoClient) GetIP(id string) (*civogo.IP, error) {
+	ip, err := c.civoGoClient.GetIP(id)
+	if err != nil {
+		if strings.Contains(err.Error(), "DatabaseIPNotFoundError") {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return ip, nil
+}
+
+// AssignIP assigns a civo IP to a civo instance.
+func (c *CivoClient) AssignIP(id string, resourceID string, resourceType string) error {
+	_, err := c.civoGoClient.AssignIP(id, resourceID, "instance")
+	return err
+}
+
+// DeleteIP deletes a civo IP.
+func (c *CivoClient) DeleteIP(id string) error {
+	ip, err := c.civoGoClient.GetIP(id)
+	if err != nil {
+		return err
+	}
+	resp, err := c.civoGoClient.DeleteIP(ip.ID)
+	if err != nil {
+		log.Debugf("error [%s %s %s %s]", resp.Result, resp.ErrorDetails, resp.ErrorCode, resp.ErrorReason)
+	}
+	return err
+}

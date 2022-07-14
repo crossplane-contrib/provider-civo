@@ -1,0 +1,44 @@
+apiVersion: ip.civo.crossplane.io/v1alpha1
+kind: CivoIP
+metadata:
+  name: test-crossplane-ip
+spec:
+  providerConfigRef:
+    name: civo-provider
+status:
+  address: 10.0.0.2
+  id: 987654321
+  assigned_to:
+    id: 123456789
+    type: instance
+    name: test-crossplane-instance
+---
+apiVersion: instance.civo.crossplane.io/v1alpha1
+kind: CivoInstance
+metadata:
+  name: test-crossplane-instance
+spec:
+  instanceConfig:
+    diskImage: ubuntu-focal
+    region: LON1
+    size: g3.large
+    hostname: myCrossplaneInstance
+    reserved_ip: test-crossplane-ip
+    tags:
+      - crossplane
+      - civo
+    sshPubKeyRef:
+      namespace: default
+      name: ssh-key-secret
+      key: ssh-publickey
+  providerConfigRef:
+    name: civo-provider
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ssh-key-secret
+  namespace: default
+data:
+  ssh-publickey: <pubkey in base64>
+type: Opaque

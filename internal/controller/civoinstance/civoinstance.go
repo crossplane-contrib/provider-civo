@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"github.com/crossplane-contrib/provider-civo/apis/civo/instance/v1alpha1"
+	ipv1alpha1 "github.com/crossplane-contrib/provider-civo/apis/civo/ip/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
@@ -170,6 +171,25 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		sshPubKey = string(s.Data[createInstance.Spec.InstanceConfig.SSHPubKeyRef.Key])
 	}
 
+	ip := &ipv1alpha1.CivoIP{}
+	err := e.kube.Get(ctx, types.NamespacedName{Name: createInstance.Spec.InstanceConfig.ReservedIP}, ip)
+	if err != nil {
+		return managed.ExternalCreation{}, err
+	} else {
+		if ip.Status.AtProvider.ID != "" {
+			ip, err := e.civoClient.GetIP(ip.Status.AtProvider.ID)
+			if err != nil {
+				return managed.ExternalCreation{}, err
+			}
+			err = e.civoClient.AssignIP(ip.ID, createInstance.Status.AtProvider.ID, "instance")
+			if err != nil {
+				return managed.ExternalCreation{}, err
+			}
+		} else {
+			return managed.ExternalCreation{}, err
+		}
+	}
+
 	instance, err := e.civoClient.CreateNewInstance(createInstance, sshPubKey, cr.Spec.InstanceConfig.DiskImage)
 	if err != nil {
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreateInstance)
@@ -205,3 +225,18 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	err := e.civoClient.DeleteInstance(cr.Status.AtProvider.ID)
 	return errors.Wrap(err, errDeleteInstance)
 }
+
+// func findIPWithInstanceID(civo civogo.Clienter, instanceID string) (*civogo.IP, error) {
+// 	ips, err := civo.ListIPs()
+// 	if err != nil {
+// 		klog.Errorf("Unable to list IPs, error: %v", err)
+// 		return nil, err
+// 	}
+
+// 	for _, ip := range ips.Items {
+// 		if ip.AssignedTo.ID == instanceID {
+// 			return &ip, nil
+// 		}
+// 	}
+// 	return nil, nil
+// }

@@ -40,6 +40,9 @@ type CivoInstanceConfig struct {
 
 	// +optional
 	PublicIPRequired string `json:"publicIPRequired,omitempty"`
+
+	// +optional
+	ReservedIP string `json:"reserved_ip,omitempty"`
 }
 
 // SecretReference location of the SSH Public Key Secret
