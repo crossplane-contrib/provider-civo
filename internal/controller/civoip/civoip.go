@@ -137,15 +137,6 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	if civoIP != nil {
 		return managed.ExternalCreation{}, nil
 	}
-
-	//This will return the civoip object
-	//e.kube.Get(ctx, types.NamespacedName{Name: cr.Spec.ReservedIP}, cr)
-
-	// We can check if the id is empty or not
-	// if empty, return managed.ExternalCreation{}, nil
-	// if not, e.civoclient.getip(id)
-	// once we get the id, e.civoclient.AssignIP
-
 	_, err = e.civoClient.CreateNewIP(cr.Name)
 	if err != nil {
 		return managed.ExternalCreation{}, err
