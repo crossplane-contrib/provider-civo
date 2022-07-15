@@ -283,9 +283,24 @@ func (c *CivoClient) GetIP(id string) (*civogo.IP, error) {
 	return ip, nil
 }
 
+// ListIPs returns a list of civo IPs.
+func (c *CivoClient) ListIPs() (*civogo.PaginatedIPs, error) {
+	ips, err := c.civoGoClient.ListIPs()
+	if err != nil {
+		return nil, err
+	}
+	return ips, nil
+}
+
 // AssignIP assigns a civo IP to a civo instance.
 func (c *CivoClient) AssignIP(id string, resourceID string, resourceType string) error {
 	_, err := c.civoGoClient.AssignIP(id, resourceID, "instance")
+	return err
+}
+
+// UnAssignIP unassigns a civo IP from a civo instance.
+func (c *CivoClient) UnAssignIP(id string) error {
+	_, err := c.civoGoClient.UnassignIP(id)
 	return err
 }
 

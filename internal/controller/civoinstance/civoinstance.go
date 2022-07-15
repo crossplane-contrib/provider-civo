@@ -16,6 +16,7 @@ package civoinstance
 import (
 	"context"
 
+	"github.com/civo/civogo"
 	v1alpha1provider "github.com/crossplane-contrib/provider-civo/apis/civo/provider/v1alpha1"
 	"github.com/crossplane-contrib/provider-civo/pkg/civocli"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
@@ -25,6 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/klog"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
@@ -175,18 +177,28 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	err := e.kube.Get(ctx, types.NamespacedName{Name: createInstance.Spec.InstanceConfig.ReservedIP}, ip)
 	if err != nil {
 		return managed.ExternalCreation{}, err
-	} else {
-		if ip.Status.AtProvider.ID != "" {
-			ip, err := e.civoClient.GetIP(ip.Status.AtProvider.ID)
-			if err != nil {
-				return managed.ExternalCreation{}, err
-			}
-			err = e.civoClient.AssignIP(ip.ID, createInstance.Status.AtProvider.ID, "instance")
-			if err != nil {
-				return managed.ExternalCreation{}, err
-			}
-		} else {
+	}
+	if ip.Status.AtProvider.ID != "" {
+		ip, err := e.civoClient.GetIP(ip.Status.AtProvider.ID)
+		if err != nil {
 			return managed.ExternalCreation{}, err
+		}
+		err = e.civoClient.AssignIP(ip.ID, createInstance.Status.AtProvider.ID, "instance")
+		if err != nil {
+			return managed.ExternalCreation{}, err
+		}
+	} else {
+		ip, err := findIPWithInstanceID(e.civoClient, createInstance.Status.AtProvider.ID)
+		if err != nil {
+			klog.Errorf("Unable to find IP with instance ID, error: %v", err)
+			return managed.ExternalCreation{}, err
+		}
+		if ip != nil {
+			err = e.civoClient.UnAssignIP(ip.ID)
+			if err != nil {
+				klog.Errorf("Unable to unassign IP, error: %v", err)
+				return managed.ExternalCreation{}, err
+			}
 		}
 	}
 
@@ -226,17 +238,17 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	return errors.Wrap(err, errDeleteInstance)
 }
 
-// func findIPWithInstanceID(civo civogo.Clienter, instanceID string) (*civogo.IP, error) {
-// 	ips, err := civo.ListIPs()
-// 	if err != nil {
-// 		klog.Errorf("Unable to list IPs, error: %v", err)
-// 		return nil, err
-// 	}
+func findIPWithInstanceID(civo *civocli.CivoClient, instanceID string) (*civogo.IP, error) {
+	ips, err := civo.ListIPs()
+	if err != nil {
+		klog.Errorf("Unable to list IPs, error: %v", err)
+		return nil, err
+	}
 
-// 	for _, ip := range ips.Items {
-// 		if ip.AssignedTo.ID == instanceID {
-// 			return &ip, nil
-// 		}
-// 	}
-// 	return nil, nil
-// }
+	for _, ip := range ips.Items {
+		if ip.AssignedTo.ID == instanceID {
+			return &ip, nil
+		}
+	}
+	return nil, nil
+}
