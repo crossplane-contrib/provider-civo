@@ -119,6 +119,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
 	if civoIP.IP != "" {
+		cr.Status.AtProvider.ID = civoIP.IP
 		return managed.ExternalObservation{ResourceExists: true}, nil
 	} else {
 		return managed.ExternalObservation{ResourceExists: false}, nil

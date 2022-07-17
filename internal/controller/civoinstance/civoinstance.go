@@ -132,6 +132,35 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.Wrap(err, errGenObservation)
 	}
 
+	ip := &ipv1alpha1.CivoIP{}
+	err = e.kube.Get(ctx, types.NamespacedName{Name: civoInstance.ReservedIP}, ip)
+	if err != nil {
+		return managed.ExternalObservation{}, err
+	}
+	if ip.Status.AtProvider.ID != "" {
+		ip, err := e.civoClient.GetIP(ip.Status.AtProvider.ID)
+		if err != nil {
+			return managed.ExternalObservation{}, err
+		}
+		err = e.civoClient.AssignIP(ip.ID, civoInstance.ID, "instance")
+		if err != nil {
+			return managed.ExternalObservation{}, err
+		}
+	} else {
+		ip, err := findIPWithInstanceID(e.civoClient, civoInstance.ID)
+		if err != nil {
+			klog.Errorf("Unable to find IP with instance ID, error: %v", err)
+			return managed.ExternalObservation{}, err
+		}
+		if ip != nil {
+			err = e.civoClient.UnAssignIP(ip.ID)
+			if err != nil {
+				klog.Errorf("Unable to unassign IP, error: %v", err)
+				return managed.ExternalObservation{}, err
+			}
+		}
+	}
+
 	switch civoInstance.Status {
 	case civocli.StateActive:
 		cr.SetConditions(xpv1.Available())
@@ -173,35 +202,6 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		sshPubKey = string(s.Data[createInstance.Spec.InstanceConfig.SSHPubKeyRef.Key])
 	}
 
-	ip := &ipv1alpha1.CivoIP{}
-	err := e.kube.Get(ctx, types.NamespacedName{Name: createInstance.Spec.InstanceConfig.ReservedIP}, ip)
-	if err != nil {
-		return managed.ExternalCreation{}, err
-	}
-	if ip.Status.AtProvider.ID != "" {
-		ip, err := e.civoClient.GetIP(ip.Status.AtProvider.ID)
-		if err != nil {
-			return managed.ExternalCreation{}, err
-		}
-		err = e.civoClient.AssignIP(ip.ID, createInstance.Status.AtProvider.ID, "instance")
-		if err != nil {
-			return managed.ExternalCreation{}, err
-		}
-	} else {
-		ip, err := findIPWithInstanceID(e.civoClient, createInstance.Status.AtProvider.ID)
-		if err != nil {
-			klog.Errorf("Unable to find IP with instance ID, error: %v", err)
-			return managed.ExternalCreation{}, err
-		}
-		if ip != nil {
-			err = e.civoClient.UnAssignIP(ip.ID)
-			if err != nil {
-				klog.Errorf("Unable to unassign IP, error: %v", err)
-				return managed.ExternalCreation{}, err
-			}
-		}
-	}
-
 	instance, err := e.civoClient.CreateNewInstance(createInstance, sshPubKey, cr.Spec.InstanceConfig.DiskImage)
 	if err != nil {
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreateInstance)
@@ -223,7 +223,36 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.New(errNotCivoInstance)
 	}
 
-	err := e.civoClient.UpdateInstance(cr.Status.AtProvider.ID, cr)
+	ip := &ipv1alpha1.CivoIP{}
+	err := e.kube.Get(ctx, types.NamespacedName{Name: cr.Spec.InstanceConfig.ReservedIP}, ip)
+	if err != nil {
+		return managed.ExternalUpdate{}, err
+	}
+	if ip.Status.AtProvider.ID != "" {
+		ip, err := e.civoClient.GetIP(ip.Status.AtProvider.ID)
+		if err != nil {
+			return managed.ExternalUpdate{}, err
+		}
+		err = e.civoClient.AssignIP(ip.ID, cr.Status.AtProvider.ID, "instance")
+		if err != nil {
+			return managed.ExternalUpdate{}, err
+		}
+	} else {
+		ip, err := findIPWithInstanceID(e.civoClient, cr.Status.AtProvider.ID)
+		if err != nil {
+			klog.Errorf("Unable to find IP with instance ID, error: %v", err)
+			return managed.ExternalUpdate{}, err
+		}
+		if ip != nil {
+			err = e.civoClient.UnAssignIP(ip.ID)
+			if err != nil {
+				klog.Errorf("Unable to unassign IP, error: %v", err)
+				return managed.ExternalUpdate{}, err
+			}
+		}
+	}
+
+	err = e.civoClient.UpdateInstance(cr.Status.AtProvider.ID, cr)
 
 	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateInstance)
 }
