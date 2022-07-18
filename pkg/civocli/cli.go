@@ -161,6 +161,54 @@ func (c *CivoClient) GetInstance(id string) (*civogo.Instance, error) {
 	return instance, nil
 }
 
+// GetNetwork gets a network on Civo.
+func (c *CivoClient) GetNetwork(id string) (*civogo.Network, error) {
+	network, err := c.civoGoClient.GetNetwork(id)
+	if err != nil {
+		if strings.Contains(err.Error(), "DatabaseNetworkNotFoundError") {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return network, nil
+}
+
+// CreateNewNetwork creates a new network on Civo.
+func (c *CivoClient) CreateNewNetwork(label string) (*civogo.NetworkResult, error) {
+	network, err := c.civoGoClient.NewNetwork(label)
+	if err != nil {
+		return nil, err
+	}
+	return network, nil
+}
+
+// UpdateNetwork updates a network on Civo.
+func (c *CivoClient) UpdateNetwork(id string, label string) error {
+	network, err := c.civoGoClient.GetNetwork(id)
+	if err != nil {
+		return err
+	}
+	network.Label = label
+	_, err = c.civoGoClient.RenameNetwork(label, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// DeleteNetwork deletes a network on Civo.
+func (c *CivoClient) DeleteNetwork(id string) error {
+	network, err := c.civoGoClient.GetNetwork(id)
+	if err != nil {
+		return err
+	}
+	_, err = c.civoGoClient.DeleteNetwork(network.ID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetK3sCluster gets a K3s cluster on Civo.
 func (c *CivoClient) GetK3sCluster(clusterName string) (*civogo.KubernetesCluster, error) {
 

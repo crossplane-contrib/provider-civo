@@ -22,6 +22,7 @@ import (
 
 	clusterv1alpha1 "github.com/crossplane-contrib/provider-civo/apis/civo/cluster/v1alpha1"
 	instancev1alpha1 "github.com/crossplane-contrib/provider-civo/apis/civo/instance/v1alpha1"
+	networkv1alpha1 "github.com/crossplane-contrib/provider-civo/apis/civo/network/v1alpha1"
 	providerv1alpha1 "github.com/crossplane-contrib/provider-civo/apis/civo/provider/v1alpha1"
 )
 
@@ -30,6 +31,7 @@ func init() {
 	AddToSchemes = append(AddToSchemes,
 		providerv1alpha1.SchemeBuilder.AddToScheme,
 		clusterv1alpha1.SchemeBuilder.AddToScheme,
+		networkv1alpha1.SchemeBuilder.AddToScheme,
 		instancev1alpha1.SchemeBuilder.AddToScheme,
 	)
 }

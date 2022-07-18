@@ -21,6 +21,7 @@ import (
 	"path/filepath"
 
 	civoinstance "github.com/crossplane-contrib/provider-civo/internal/controller/civoinstance"
+	civonetwork "github.com/crossplane-contrib/provider-civo/internal/controller/civonetwork"
 
 	log "github.com/sirupsen/logrus"
 
@@ -79,6 +80,7 @@ func main() {
 	rl := ratelimiter.NewDefaultProviderRateLimiter(ratelimiter.DefaultProviderRPS)
 	kingpin.FatalIfError(apis.AddToScheme(mgr.GetScheme()), "Cannot add Template APIs to scheme")
 	kingpin.FatalIfError(civokubernetes.Setup(mgr, log, rl), "Cannot setup Civo K3 Cluster controllers")
+	kingpin.FatalIfError(civonetwork.Setup(mgr, log, rl), "Cannot setup Civo Network controllers")
 	kingpin.FatalIfError(civoinstance.Setup(mgr, log, rl), "Cannot setup Civo Instance controllers")
 	kingpin.FatalIfError(civoprovider.Setup(mgr, log, rl), "Cannot setup Provider controllers")
 	kingpin.FatalIfError(mgr.Start(ctrl.SetupSignalHandler()), "Cannot start controller manager")
