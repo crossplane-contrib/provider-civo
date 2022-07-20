@@ -5,13 +5,6 @@ metadata:
 spec:
   providerConfigRef:
     name: civo-provider
-status:
-  address: 10.0.0.2
-  id: 987654321
-  assigned_to:
-    id: 123456789
-    type: instance
-    name: test-crossplane-instance
 ---
 apiVersion: instance.civo.crossplane.io/v1alpha1
 kind: CivoInstance
@@ -20,7 +13,7 @@ metadata:
 spec:
   instanceConfig:
     diskImage: ubuntu-focal
-    region: LON1
+    region: FRA1
     size: g3.large
     hostname: myCrossplaneInstance
     reserved_ip: test-crossplane-ip

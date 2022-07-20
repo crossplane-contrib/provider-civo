@@ -71,6 +71,7 @@ spec:
                   region:
                     type: string
                   reserved_ip:
+                    description: Name of the CivoIP custom resource
                     type: string
                   script:
                     type: string

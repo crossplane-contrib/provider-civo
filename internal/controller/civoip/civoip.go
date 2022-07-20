@@ -15,9 +15,10 @@ package civoip
 
 import (
 	"context"
+	"strings"
 
+	"github.com/civo/civogo"
 	"github.com/crossplane-contrib/provider-civo/apis/civo/ip/v1alpha1"
-	"github.com/crossplane-contrib/provider-civo/pkg/civocli"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
@@ -47,8 +48,8 @@ type connecter struct {
 }
 
 type external struct {
-	kube       client.Client
-	civoClient *civocli.CivoClient
+	kube         client.Client
+	civoGoClient *civogo.Client
 }
 
 // Setup adds a controller that reconciles ProviderConfigs by accounting for
@@ -95,14 +96,24 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, errors.New("could not find secret")
 	}
 
-	civoClient, err := civocli.NewCivoClient(string(s.Data["credentials"]), providerConfig.Spec.Region)
+	apiKey := string(s.Data["credentials"])
+	region := providerConfig.Spec.Region
+	if apiKey == "" {
+		return nil, errors.New("newCivoClient: apiKey is nil")
+	}
 
+	apiKey = strings.TrimSuffix(apiKey, "\n")
+
+	if region == "" {
+		return nil, errors.New("newCivoClient: region is nil")
+	}
+	client, err := civogo.NewClient(apiKey, region)
 	if err != nil {
 		return nil, err
 	}
 	return &external{
-		kube:       c.client,
-		civoClient: civoClient,
+		kube:         c.client,
+		civoGoClient: client,
 	}, nil
 }
 
@@ -111,8 +122,12 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotCivoIP)
 	}
-	civoIP, err := e.civoClient.GetIP(cr.Status.AtProvider.ID)
+
+	civoIP, err := e.civoGoClient.FindIP(cr.Name)
 	if err != nil {
+		if strings.Contains(err.Error(), "DatabaseIPNotFoundError") {
+			return managed.ExternalObservation{ResourceExists: false}, nil
+		}
 		return managed.ExternalObservation{ResourceExists: false}, err
 	}
 	if civoIP == nil {
@@ -120,6 +135,9 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 	if civoIP.IP != "" {
 		cr.Status.AtProvider.ID = civoIP.IP
+		cr.Status.AtProvider.AssignedTo.ID = civoIP.AssignedTo.ID
+		cr.Status.AtProvider.AssignedTo.Name = civoIP.AssignedTo.Name
+		cr.Status.AtProvider.AssignedTo.Type = civoIP.AssignedTo.Type
 		return managed.ExternalObservation{ResourceExists: true}, nil
 	} else {
 		return managed.ExternalObservation{ResourceExists: false}, nil
@@ -131,14 +149,19 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotCivoIP)
 	}
-	civoIP, err := e.civoClient.GetIP(cr.Status.AtProvider.ID)
+	civoIP, err := e.civoGoClient.FindIP(cr.Name)
 	if err != nil {
+		if strings.Contains(err.Error(), "DatabaseIPNotFoundError") {
+			return managed.ExternalCreation{ExternalNameAssigned: false}, nil
+		}
 		return managed.ExternalCreation{}, err
 	}
 	if civoIP != nil {
 		return managed.ExternalCreation{}, nil
 	}
-	_, err = e.civoClient.CreateNewIP(cr.Name)
+	_, err = e.civoGoClient.NewIP(&civogo.CreateIPRequest{
+		Name: cr.Name,
+	})
 	if err != nil {
 		return managed.ExternalCreation{}, err
 	}
@@ -161,6 +184,6 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 		return errors.New(errNotCivoIP)
 	}
 	cr.SetConditions(xpv1.Deleting())
-	err := e.civoClient.DeleteIP(cr.Status.AtProvider.ID)
+	_, err := e.civoGoClient.DeleteIP(cr.Status.AtProvider.ID)
 	return errors.Wrap(err, errDeleteIP)
 }

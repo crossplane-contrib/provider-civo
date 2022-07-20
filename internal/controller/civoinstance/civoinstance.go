@@ -55,8 +55,9 @@ type connecter struct {
 }
 
 type external struct {
-	kube       client.Client
-	civoClient *civocli.CivoClient
+	kube         client.Client
+	civoClient   *civocli.CivoClient
+	civoGoClient *civogo.Client
 }
 
 // Setup adds a controller that reconciles ProviderConfigs by accounting for
@@ -72,7 +73,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 		resource.ManagedKind(v1alpha1.CivoInstancGroupVersionKind),
 		managed.WithExternalConnecter(&connecter{client: mgr.GetClient()}),
 		managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
-		managed.WithLogger(l.WithValues("civokubernetes", name)),
+		managed.WithLogger(l.WithValues("civoinstance", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -138,22 +139,22 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, err
 	}
 	if ip.Status.AtProvider.ID != "" {
-		ip, err := e.civoClient.GetIP(ip.Status.AtProvider.ID)
+		ip, err := e.civoGoClient.GetIP(ip.Status.AtProvider.ID)
 		if err != nil {
 			return managed.ExternalObservation{}, err
 		}
-		err = e.civoClient.AssignIP(ip.ID, civoInstance.ID, "instance")
+		_, err = e.civoGoClient.AssignIP(ip.ID, civoInstance.ID, "instance", e.civoGoClient.Region)
 		if err != nil {
 			return managed.ExternalObservation{}, err
 		}
 	} else {
-		ip, err := findIPWithInstanceID(e.civoClient, civoInstance.ID)
+		ip, err := findIPWithInstanceID(e.civoGoClient, civoInstance.ID)
 		if err != nil {
 			klog.Errorf("Unable to find IP with instance ID, error: %v", err)
 			return managed.ExternalObservation{}, err
 		}
 		if ip != nil {
-			err = e.civoClient.UnAssignIP(ip.ID)
+			_, err = e.civoGoClient.UnassignIP(ip.ID, e.civoGoClient.Region)
 			if err != nil {
 				klog.Errorf("Unable to unassign IP, error: %v", err)
 				return managed.ExternalObservation{}, err
@@ -229,22 +230,22 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, err
 	}
 	if ip.Status.AtProvider.ID != "" {
-		ip, err := e.civoClient.GetIP(ip.Status.AtProvider.ID)
+		ip, err := e.civoGoClient.GetIP(ip.Status.AtProvider.ID)
 		if err != nil {
 			return managed.ExternalUpdate{}, err
 		}
-		err = e.civoClient.AssignIP(ip.ID, cr.Status.AtProvider.ID, "instance")
+		_, err = e.civoGoClient.AssignIP(ip.ID, cr.Status.AtProvider.ID, "instance", e.civoGoClient.Region)
 		if err != nil {
 			return managed.ExternalUpdate{}, err
 		}
 	} else {
-		ip, err := findIPWithInstanceID(e.civoClient, cr.Status.AtProvider.ID)
+		ip, err := findIPWithInstanceID(e.civoGoClient, cr.Status.AtProvider.ID)
 		if err != nil {
 			klog.Errorf("Unable to find IP with instance ID, error: %v", err)
 			return managed.ExternalUpdate{}, err
 		}
 		if ip != nil {
-			err = e.civoClient.UnAssignIP(ip.ID)
+			_, err = e.civoGoClient.UnassignIP(ip.ID, e.civoGoClient.Region)
 			if err != nil {
 				klog.Errorf("Unable to unassign IP, error: %v", err)
 				return managed.ExternalUpdate{}, err
@@ -267,7 +268,7 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	return errors.Wrap(err, errDeleteInstance)
 }
 
-func findIPWithInstanceID(civo *civocli.CivoClient, instanceID string) (*civogo.IP, error) {
+func findIPWithInstanceID(civo *civogo.Client, instanceID string) (*civogo.IP, error) {
 	ips, err := civo.ListIPs()
 	if err != nil {
 		klog.Errorf("Unable to list IPs, error: %v", err)
