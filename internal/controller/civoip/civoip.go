@@ -184,6 +184,13 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 		return errors.New(errNotCivoIP)
 	}
 	cr.SetConditions(xpv1.Deleting())
-	_, err := e.civoGoClient.DeleteIP(cr.Status.AtProvider.ID)
+	civoIP, err := e.civoGoClient.FindIP(cr.Name)
+	if err != nil {
+		if strings.Contains(err.Error(), "DatabaseIPNotFoundError") {
+			return nil
+		}
+		return err
+	}
+	_, err = e.civoGoClient.DeleteIP(civoIP.ID)
 	return errors.Wrap(err, errDeleteIP)
 }
