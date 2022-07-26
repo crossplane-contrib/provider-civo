@@ -159,7 +159,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		cr.SetConditions(xpv1.Creating())
 		return managed.ExternalObservation{
 			ResourceExists:   true,
-			ResourceUpToDate: true,
+			ResourceUpToDate: false,
 		}, nil
 	}
 	return managed.ExternalObservation{}, nil
