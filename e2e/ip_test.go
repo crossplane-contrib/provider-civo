@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -14,17 +16,9 @@ import (
 )
 
 func TestReservedIPBasic(t *testing.T) {
-
 	g := NewGomegaWithT(t)
 
-	ip := &civoip.CivoIP{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "e2e-test-ip",
-		},
-	}
-
-	fmt.Println("Creating Reserved IP")
-	err := e2eTest.tenantClient.Create(context.TODO(), ip)
+	ip, err := getOrCreateIP("e2e-test-ip")
 	g.Expect(err).ShouldNot(HaveOccurred())
 
 	g.Eventually(func() string {
@@ -36,14 +30,7 @@ func TestReservedIPBasic(t *testing.T) {
 func TestIPAssignedToInstance(t *testing.T) {
 	g := NewGomegaWithT(t)
 
-	ip := &civoip.CivoIP{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "e2e-test-ip",
-		},
-	}
-
-	fmt.Println("Creating Reserved IP")
-	err := e2eTest.tenantClient.Create(context.TODO(), ip)
+	ip, err := getOrCreateIP("e2e-test-ip")
 	g.Expect(err).ShouldNot(HaveOccurred())
 
 	g.Eventually(func() string {
@@ -57,10 +44,10 @@ func TestIPAssignedToInstance(t *testing.T) {
 		},
 		Spec: civoinstance.CivoInstanceSpec{
 			InstanceConfig: civoinstance.CivoInstanceConfig{
-				Hostname:  "e2e-test-instance",
-				Size:      "g3.xsmall",
-				DiskImage: "ubuntu-focal",
-				Region:    "LON1",
+				ReservedIP: "e2e-test-ip",
+				Size:       "g3.xsmall",
+				DiskImage:  "ubuntu-focal",
+				Region:     "LON1",
 			},
 		},
 	}
@@ -70,12 +57,25 @@ func TestIPAssignedToInstance(t *testing.T) {
 	g.Expect(err).ShouldNot(HaveOccurred())
 
 	g.Eventually(func() string {
-		err = e2eTest.tenantClient.Get(context.TODO(), client.ObjectKeyFromObject(instance), instance)
-		return instance.Spec.InstanceConfig.ReservedIP
-	}, "2m", "5s").Should(Equal(ip.ObjectMeta.Name))
-
-	g.Eventually(func() string {
 		err = e2eTest.tenantClient.Get(context.TODO(), client.ObjectKeyFromObject(ip), ip)
 		return ip.Status.AtProvider.AssignedTo.ID
 	}, "2m", "5s").Should(Equal(instance.Status.AtProvider.ID))
+}
+
+func getOrCreateIP(name string) (*civoip.CivoIP, error) {
+	ip := &civoip.CivoIP{}
+	err := e2eTest.tenantClient.Get(context.TODO(), client.ObjectKey{Name: name}, ip)
+	if err != nil && errors.IsNotFound(err) {
+		ip = &civoip.CivoIP{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+		}
+		fmt.Println("Creating Reserved IP")
+		err = e2eTest.tenantClient.Create(context.TODO(), ip)
+		return ip, err
+	} else if err != nil {
+		return nil, err
+	}
+	return nil, err
 }
