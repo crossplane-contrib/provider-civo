@@ -9,5 +9,6 @@ spec:
     size: g3.large
     hostname: myCrossplaneInstance2
     initialUser: crossplane
+    reserved_ip: test-crossplane-ip
   providerConfigRef:
     name: civo-provider
