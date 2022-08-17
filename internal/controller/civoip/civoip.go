@@ -111,6 +111,7 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	if err != nil {
 		return nil, err
 	}
+
 	return &external{
 		kube:         c.client,
 		civoGoClient: client,
@@ -123,25 +124,24 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.New(errNotCivoIP)
 	}
 
-	civoIP, err := e.civoGoClient.FindIP(cr.Name)
+	civoIP, err := findIPExact(e.civoGoClient, cr.Name)
 	if err != nil {
 		if strings.Contains(err.Error(), "DatabaseIPNotFoundError") {
 			return managed.ExternalObservation{ResourceExists: false}, nil
 		}
 		return managed.ExternalObservation{ResourceExists: false}, err
 	}
-	if civoIP == nil {
-		return managed.ExternalObservation{ResourceExists: false}, nil
-	}
+
 	if civoIP.IP != "" {
-		cr.Status.AtProvider.ID = civoIP.IP
+		cr.Status.AtProvider.ID = civoIP.ID
+		cr.Status.AtProvider.Address = civoIP.IP
 		cr.Status.AtProvider.AssignedTo.ID = civoIP.AssignedTo.ID
 		cr.Status.AtProvider.AssignedTo.Name = civoIP.AssignedTo.Name
 		cr.Status.AtProvider.AssignedTo.Type = civoIP.AssignedTo.Type
-		return managed.ExternalObservation{ResourceExists: true}, nil
-	} else {
-		return managed.ExternalObservation{ResourceExists: false}, nil
+		cr.SetConditions(xpv1.Available())
+		return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: true}, nil
 	}
+	return managed.ExternalObservation{ResourceExists: false}, nil
 }
 
 func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
@@ -149,18 +149,28 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotCivoIP)
 	}
-	civoIP, err := e.civoGoClient.FindIP(cr.Name)
+
+	civoIP, err := findIPExact(e.civoGoClient, cr.Name)
 	if err != nil {
-		if strings.Contains(err.Error(), "DatabaseIPNotFoundError") {
-			return managed.ExternalCreation{ExternalNameAssigned: false}, nil
+		if !strings.Contains(err.Error(), "DatabaseIPNotFoundError") {
+			return managed.ExternalCreation{}, err
 		}
-		return managed.ExternalCreation{}, err
 	}
 	if civoIP != nil {
 		return managed.ExternalCreation{}, nil
 	}
+
+	providerConfig := &v1alpha1provider.ProviderConfig{}
+
+	err = e.kube.Get(ctx, types.NamespacedName{Name: cr.Spec.ProviderConfigReference.Name}, providerConfig)
+
+	if err != nil {
+		return managed.ExternalCreation{}, err
+	}
+
 	_, err = e.civoGoClient.NewIP(&civogo.CreateIPRequest{
-		Name: cr.Name,
+		Name:   cr.Name,
+		Region: providerConfig.Spec.Region,
 	})
 	if err != nil {
 		return managed.ExternalCreation{}, err
@@ -168,13 +178,10 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	cr.SetConditions(xpv1.Creating())
 
-	return managed.ExternalCreation{
-		ExternalNameAssigned: true,
-	}, nil
+	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
 }
 
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-
 	return managed.ExternalUpdate{}, nil
 }
 
@@ -184,7 +191,7 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 		return errors.New(errNotCivoIP)
 	}
 	cr.SetConditions(xpv1.Deleting())
-	civoIP, err := e.civoGoClient.FindIP(cr.Name)
+	civoIP, err := findIPExact(e.civoGoClient, cr.Name)
 	if err != nil {
 		if strings.Contains(err.Error(), "DatabaseIPNotFoundError") {
 			return nil
@@ -192,5 +199,18 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 		return err
 	}
 	_, err = e.civoGoClient.DeleteIP(civoIP.ID)
-	return errors.Wrap(err, errDeleteIP)
+	return err
+}
+
+func findIPExact(client *civogo.Client, name string) (*civogo.IP, error) {
+	ipList, err := client.ListIPs()
+	if err != nil {
+		return nil, err
+	}
+	for _, ip := range ipList.Items {
+		if ip.Name == name {
+			return &ip, nil
+		}
+	}
+	return nil, errors.New("DatabaseIPNotFoundError")
 }

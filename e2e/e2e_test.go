@@ -14,11 +14,13 @@ import (
 	"github.com/civo/civogo"
 	"github.com/crossplane-contrib/provider-civo/apis"
 	"github.com/crossplane-contrib/provider-civo/internal/controller/civoinstance"
+	"github.com/crossplane-contrib/provider-civo/internal/controller/civoip"
 	"github.com/crossplane-contrib/provider-civo/internal/controller/civokubernetes"
 	civoprovider "github.com/crossplane-contrib/provider-civo/internal/controller/provider"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/joho/godotenv"
+	"golang.org/x/sync/errgroup"
 	"gopkg.in/alecthomas/kingpin.v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -27,6 +29,7 @@ import (
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 var CivoRegion, CivoURL string
@@ -110,17 +113,32 @@ func TestMain(m *testing.M) {
 		log.Panicf("Unable get civo-api-access secret: %s", err.Error())
 	}
 
+	errs, errCtx := errgroup.WithContext(context.Background())
+
 	// Run the provider
-	go run(secret, e2eTest.cluster.KubeConfig)
-	time.Sleep(1 * time.Minute)
+	mgr := setupNewManager(secret, e2eTest.cluster.KubeConfig)
+	errs.Go(func() error {
+		return mgr.Start(errCtx)
+	})
+
+	time.Sleep(15 * time.Second)
 
 	// Run the tests
 	fmt.Println("Running Tests")
-	exitCode := m.Run()
+	errs.Go(func() error {
+		time.Sleep(45 * time.Second)
+		exitCode := m.Run()
+		if exitCode == 0 {
+			return nil
+		}
+		return fmt.Errorf("Test Failed")
+	})
 
-	e2eTest.cleanUpCluster()
-
-	os.Exit(exitCode)
+	err = errs.Wait()
+	if err != nil {
+		log.Panic(err)
+		return
+	}
 
 }
 
@@ -186,7 +204,7 @@ func (e *E2ETest) cleanUpCluster() {
 	fmt.Println("Attempting Test Cleanup")
 	if e.cluster != nil {
 		fmt.Printf("Deleting Cluster: %s\n", e.cluster.ID)
-		e.civo.DeleteKubernetesCluster(e.cluster.ID)
+		//e.civo.DeleteKubernetesCluster(e.cluster.ID)
 	}
 }
 
@@ -205,7 +223,7 @@ func retry(attempts int, sleep time.Duration, f func() error) (err error) {
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
 
-func run(secret *corev1.Secret, kubeconfig string) {
+func setupNewManager(secret *corev1.Secret, kubeconfig string) manager.Manager {
 	err := os.WriteFile("./kubeconfig", []byte(kubeconfig), 0644)
 	if err != nil {
 		panic(err)
@@ -223,32 +241,36 @@ func run(secret *corev1.Secret, kubeconfig string) {
 	}
 
 	klog.Infof("Starting Civo Crossplane Provider with CIVO_API_URL: %s, CIVO_REGION: %s, CIVO_CLUSTER_ID: %s", APIURL, Region, ClusterID)
-	klog.Info("Please make sure CRD's are installed in the cluster. They are inside /package/crds/")
+	klog.Info("Please make sure CRD's are installed in the cluster. They are inside /package/crds/. Also, apply the provider.yaml file in examples/civo/provider. Sleeping for one minute until CRD's are applied.")
+	//time.Sleep(1 * time.Minute)
 
 	zl := zap.New(zap.UseDevMode(*debug))
 	log := logging.NewLogrLogger(zl.WithName("provider-template"))
-	if *debug {
-		// The controller-runtime runs with a no-op logger by default. It is
-		// *very* verbose even at info level, so we only provide it a real
-		// logger when we're running in debug mode.
-		ctrl.SetLogger(zl)
-	}
 
-	cfg, err := ctrl.GetConfig()
-	kingpin.FatalIfError(err, "Cannot get API server rest config")
+	// The controller-runtime runs with a no-op logger by default. It is
+	// *very* verbose even at info level, so we only provide it a real
+	// logger when we're running in debug mode.
+	ctrl.SetLogger(zl)
 
 	syncPeriod := 1 * time.Hour
-	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		LeaderElection:   false,
 		LeaderElectionID: "crossplane-leader-election-provider-template",
 		SyncPeriod:       &syncPeriod,
 	})
 	kingpin.FatalIfError(err, "Cannot create controller manager")
 
+	log.Info("Starting Controllers")
+
 	rl := ratelimiter.NewDefaultProviderRateLimiter(ratelimiter.DefaultProviderRPS)
+	// kingpin.FatalIfError(clusterv1alpha1.SchemeBuilder.AddToScheme(mgr.GetScheme()), "Cannot add Cluster CRD to scheme")
+	// kingpin.FatalIfError(providerv1alpha1.SchemeBuilder.AddToScheme(mgr.GetScheme()), "Cannot add Provider CRD to scheme")
+	// kingpin.FatalIfError(instancev1alpha1.SchemeBuilder.AddToScheme(mgr.GetScheme()), "Cannot add Instance CRD to scheme")
+	// kingpin.FatalIfError(ipv1alpha1.SchemeBuilder.AddToScheme(mgr.GetScheme()), "Cannot add IP CRD to scheme")
 	kingpin.FatalIfError(apis.AddToScheme(mgr.GetScheme()), "Cannot add Template APIs to scheme")
 	kingpin.FatalIfError(civokubernetes.Setup(mgr, log, rl), "Cannot setup Civo K3 Cluster controllers")
 	kingpin.FatalIfError(civoinstance.Setup(mgr, log, rl), "Cannot setup Civo Instance controllers")
 	kingpin.FatalIfError(civoprovider.Setup(mgr, log, rl), "Cannot setup Provider controllers")
-	kingpin.FatalIfError(mgr.Start(ctrl.SetupSignalHandler()), "Cannot start controller manager")
+	kingpin.FatalIfError(civoip.Setup(mgr, log, rl), "Cannot setup CivoIP controllers")
+	return mgr
 }
