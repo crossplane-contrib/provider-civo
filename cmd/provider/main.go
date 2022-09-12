@@ -32,6 +32,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 
 	"github.com/crossplane-contrib/provider-civo/apis"
+	civoobjectStore "github.com/crossplane-contrib/provider-civo/internal/controller/civoObjectStore"
 	civokubernetes "github.com/crossplane-contrib/provider-civo/internal/controller/civokubernetes"
 	civoprovider "github.com/crossplane-contrib/provider-civo/internal/controller/provider"
 )
@@ -81,5 +82,6 @@ func main() {
 	kingpin.FatalIfError(civokubernetes.Setup(mgr, log, rl), "Cannot setup Civo K3 Cluster controllers")
 	kingpin.FatalIfError(civoinstance.Setup(mgr, log, rl), "Cannot setup Civo Instance controllers")
 	kingpin.FatalIfError(civoprovider.Setup(mgr, log, rl), "Cannot setup Provider controllers")
+	kingpin.FatalIfError(civoobjectStore.Setup(mgr, log, rl), "Cannot setup Object Store controllers")
 	kingpin.FatalIfError(mgr.Start(ctrl.SetupSignalHandler()), "Cannot start controller manager")
 }
