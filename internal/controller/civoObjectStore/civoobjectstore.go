@@ -209,28 +209,31 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	}
 
 	var createObjectStoreRequest civogo.CreateObjectStoreRequest
-	specifiedObjectStore, err := FindObjectStoreViaKey(e.civoGoClient, cr.Spec.AccessKey)
-	if specifiedObjectStore != nil {
+	cred, err := FindObjectStoreCreds(e.civoGoClient, cr.Spec.AccessKey)
+	if err != nil {
 		createObjectStoreRequest = civogo.CreateObjectStoreRequest{
-			Name:        specifiedObjectStore.Name,
-			MaxSizeGB:   int64(specifiedObjectStore.MaxSize),
-			AccessKeyID: specifiedObjectStore.OwnerInfo.AccessKeyID,
+			Name:        cred.Name,
+			MaxSizeGB:   int64(cred.MaxSize),
+			AccessKeyID: cred.OwnerInfo.AccessKeyID,
 			Region:      e.civoGoClient.Region,
 		}
 	} else {
 		createObjectStoreRequest = civogo.CreateObjectStoreRequest{
-			Name:        specifiedObjectStore.Name,
-			MaxSizeGB:   int64(specifiedObjectStore.MaxSize),
-			AccessKeyID: "",
-			Region:      e.civoGoClient.Region,
+			Name:      cred.Name,
+			MaxSizeGB: int64(cred.MaxSize),
+			Region:    e.civoGoClient.Region,
 		}
 	}
-	e.civoGoClient.NewObjectStore(&createObjectStoreRequest)
 	_, err = e.civoGoClient.NewObjectStore(&createObjectStoreRequest)
+	cr.SetConditions(xpv1.Creating())
 	if err != nil {
-		return managed.ExternalCreation{}, err
+		return managed.ExternalCreation{
+			ExternalNameAssigned: true,
+		}, err
 	}
-	return managed.ExternalCreation{}, nil
+	return managed.ExternalCreation{
+		ExternalNameAssigned: true,
+	}, nil
 }
 
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
@@ -242,10 +245,14 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	if err != nil {
 		return managed.ExternalUpdate{}, err
 	}
-	if civoObjectStore.MaxSize == int(cr.Status.AtProvider.MaxSize) {
-		return managed.ExternalUpdate{}, nil
+	updateObjectStoreRequest := civogo.UpdateObjectStoreRequest{
+		MaxSizeGB: int64(cr.Status.AtProvider.MaxSize),
+		Region:    e.civoGoClient.Region,
 	}
-	civoObjectStore.MaxSize = cr.Status.AtProvider.MaxSize
+	_, err = e.civoGoClient.UpdateObjectStore(civoObjectStore.ID, &updateObjectStoreRequest)
+	if err != nil {
+		return managed.ExternalUpdate{}, err
+	}
 	return managed.ExternalUpdate{}, nil
 }
 

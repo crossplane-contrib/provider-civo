@@ -27,7 +27,7 @@ func FindObjectStore(c *civogo.Client, search string) (*civogo.ObjectStore, erro
 
 }
 
-func FindObjectStoreViaKey(c *civogo.Client, search string) (*civogo.ObjectStore, error) {
+func FindObjectStoreCreds(c *civogo.Client, search string) (*civogo.ObjectStore, error) {
 	objectstores, err := c.ListObjectStores()
 	if err != nil {
 		return nil, err
