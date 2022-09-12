@@ -1,17 +1,17 @@
-package civoObjectStore
+package civoobjectstore
 
 import (
-	"fmt"
-
+	"github.com/apex/log"
 	"github.com/civo/civogo"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 )
 
-func FindObjectStore(c *civogo.Client, search string) (*civogo.ObjectStore, error) {
+func FindObjectStore(c *civogo.Client, search string) *civogo.ObjectStore {
 	objectstores, err := c.ListObjectStores()
 	if err != nil {
-		return nil, err
+		log.Errorf("Unable to fetch object store %s", err)
+		return nil
 	}
 
 	result := civogo.ObjectStore{}
@@ -19,18 +19,18 @@ func FindObjectStore(c *civogo.Client, search string) (*civogo.ObjectStore, erro
 	for _, value := range objectstores.Items {
 		if value.Name == search || value.ID == search {
 			result = value
-			return &result, nil
+			return &result
 		}
 	}
-	err = fmt.Errorf("unable to find %s, zero matches", search)
-	return nil, err
-
+	log.Infof("Object store was not found %s", search)
+	return nil
 }
 
-func FindObjectStoreCreds(c *civogo.Client, search string) (*civogo.ObjectStore, error) {
+func FindObjectStoreCreds(c *civogo.Client, search string) *civogo.ObjectStore {
 	objectstores, err := c.ListObjectStores()
 	if err != nil {
-		return nil, err
+		log.Errorf("Unable to fetch object store credential %s", err)
+		return nil
 	}
 
 	result := civogo.ObjectStore{}
@@ -38,12 +38,11 @@ func FindObjectStoreCreds(c *civogo.Client, search string) (*civogo.ObjectStore,
 	for _, value := range objectstores.Items {
 		if value.OwnerInfo.AccessKeyID == search {
 			result = value
-			return &result, nil
+			return &result
 		}
 	}
-	err = fmt.Errorf("unable to find %s, zero matches", search)
-	return nil, err
-
+	log.Infof("Object store was not found %s", search)
+	return nil
 }
 
 func connectionDetails(objectStore *civogo.ObjectStore, objectStoreCred *civogo.ObjectStoreCredential) (managed.ConnectionDetails, error) {

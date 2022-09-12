@@ -32,8 +32,8 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 
 	"github.com/crossplane-contrib/provider-civo/apis"
-	civoobjectStore "github.com/crossplane-contrib/provider-civo/internal/controller/civoObjectStore"
 	civokubernetes "github.com/crossplane-contrib/provider-civo/internal/controller/civokubernetes"
+	civoobjectStore "github.com/crossplane-contrib/provider-civo/internal/controller/civoobjectstore"
 	civoprovider "github.com/crossplane-contrib/provider-civo/internal/controller/provider"
 )
 

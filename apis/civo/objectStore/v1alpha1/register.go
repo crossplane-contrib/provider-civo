@@ -9,7 +9,7 @@ import (
 
 // Package type metadata.
 const (
-	Group   = "objectStore.civo.crossplane.io"
+	Group   = "objectstore.civo.crossplane.io"
 	Version = "v1alpha1"
 )
 

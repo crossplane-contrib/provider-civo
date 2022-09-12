@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package civoObjectStore
+package civoobjectstore
 
 import (
 	"context"
@@ -120,10 +120,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotCivoObjectStore)
 	}
-	civoObjectStore, err := FindObjectStore(e.civoGoClient, cr.Spec.Name)
-	if err != nil {
-		return managed.ExternalObservation{ResourceExists: false}, err
-	}
+	civoObjectStore := FindObjectStore(e.civoGoClient, cr.Spec.Name)
 	if civoObjectStore == nil {
 		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
@@ -200,31 +197,28 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalCreation{}, errors.New(errNotCivoObjectStore)
 	}
 
-	civoObjectStore, err := FindObjectStore(e.civoGoClient, cr.Spec.Name)
-	if err != nil {
-		return managed.ExternalCreation{}, err
-	}
+	civoObjectStore := FindObjectStore(e.civoGoClient, cr.Spec.Name)
 	if civoObjectStore != nil {
 		return managed.ExternalCreation{}, nil
 	}
 
 	var createObjectStoreRequest civogo.CreateObjectStoreRequest
-	cred, err := FindObjectStoreCreds(e.civoGoClient, cr.Spec.AccessKey)
-	if err != nil {
+	cred := FindObjectStoreCreds(e.civoGoClient, cr.Spec.AccessKey)
+	if cred != nil {
 		createObjectStoreRequest = civogo.CreateObjectStoreRequest{
-			Name:        cred.Name,
-			MaxSizeGB:   int64(cred.MaxSize),
+			Name:        cr.Spec.Name,
+			MaxSizeGB:   cr.Spec.MaxSizeGB,
 			AccessKeyID: cred.OwnerInfo.AccessKeyID,
 			Region:      e.civoGoClient.Region,
 		}
 	} else {
 		createObjectStoreRequest = civogo.CreateObjectStoreRequest{
-			Name:      cred.Name,
-			MaxSizeGB: int64(cred.MaxSize),
+			Name:      cr.Spec.Name,
+			MaxSizeGB: cr.Spec.MaxSizeGB,
 			Region:    e.civoGoClient.Region,
 		}
 	}
-	_, err = e.civoGoClient.NewObjectStore(&createObjectStoreRequest)
+	_, err := e.civoGoClient.NewObjectStore(&createObjectStoreRequest)
 	cr.SetConditions(xpv1.Creating())
 	if err != nil {
 		return managed.ExternalCreation{
@@ -241,15 +235,12 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotCivoObjectStore)
 	}
-	civoObjectStore, err := FindObjectStore(e.civoGoClient, cr.Spec.Name)
-	if err != nil {
-		return managed.ExternalUpdate{}, err
-	}
+	civoObjectStore := FindObjectStore(e.civoGoClient, cr.Spec.Name)
 	updateObjectStoreRequest := civogo.UpdateObjectStoreRequest{
 		MaxSizeGB: int64(cr.Status.AtProvider.MaxSize),
 		Region:    e.civoGoClient.Region,
 	}
-	_, err = e.civoGoClient.UpdateObjectStore(civoObjectStore.ID, &updateObjectStoreRequest)
+	_, err := e.civoGoClient.UpdateObjectStore(civoObjectStore.ID, &updateObjectStoreRequest)
 	if err != nil {
 		return managed.ExternalUpdate{}, err
 	}
@@ -261,7 +252,8 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	if !ok {
 		return errors.New(errNotCivoObjectStore)
 	}
+	objectStore := FindObjectStore(e.civoGoClient, cr.Spec.Name)
 	cr.SetConditions(xpv1.Deleting())
-	_, err := e.civoGoClient.DeleteObjectStore(cr.Status.AtProvider.Name)
+	_, err := e.civoGoClient.DeleteObjectStore(objectStore.ID)
 	return errors.Wrap(err, errDeleteObjectStore)
 }
