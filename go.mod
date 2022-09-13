@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/apex/log v1.9.0
 	github.com/civo/civogo v0.3.10
-	github.com/crossplane/crossplane-runtime v0.15.0
+	github.com/crossplane/crossplane-runtime v0.13.0
 	github.com/crossplane/crossplane-tools v0.0.0-20201201125637-9ddc70edfd0d
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
@@ -16,6 +16,12 @@ require (
 	k8s.io/api v0.21.2
 	k8s.io/apimachinery v0.21.2
 	k8s.io/client-go v0.21.2
-	sigs.k8s.io/controller-runtime v0.9.2
-	sigs.k8s.io/controller-tools v0.5.0
+	sigs.k8s.io/controller-runtime v0.8.0
+	sigs.k8s.io/controller-tools v0.3.0
+)
+
+replace (
+	k8s.io/api => k8s.io/api v0.20.1
+	k8s.io/apimachinery => k8s.io/apimachinery v0.20.1
+	k8s.io/client-go => k8s.io/client-go v0.20.1
 )
