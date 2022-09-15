@@ -206,15 +206,15 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	cred := FindObjectStoreCreds(e.civoGoClient, cr.Spec.AccessKey)
 	if cred != nil {
 		createObjectStoreRequest = civogo.CreateObjectStoreRequest{
-			Name:        cr.Spec.Name,
-			MaxSizeGB:   cr.Spec.MaxSizeGB,
+			Name:        cr.Status.AtProvider.Name,
+			MaxSizeGB:   int64(cr.Status.AtProvider.MaxSize),
 			AccessKeyID: cred.OwnerInfo.AccessKeyID,
 			Region:      e.civoGoClient.Region,
 		}
 	} else {
 		createObjectStoreRequest = civogo.CreateObjectStoreRequest{
-			Name:      cr.Spec.Name,
-			MaxSizeGB: cr.Spec.MaxSizeGB,
+			Name:      cr.Status.AtProvider.Name,
+			MaxSizeGB: int64(cr.Status.AtProvider.MaxSize),
 			Region:    e.civoGoClient.Region,
 		}
 	}
