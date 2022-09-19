@@ -24,7 +24,7 @@ type CivoObjectStoreConnectionDetails struct {
 type CivoObjectStoreSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
 
-	// Name is user-given name for the object store. It should be a S3 compatiable name
+	// Name is user-given name for the object store. It should be a S3 compatible name
 	// +required
 	// +immutable
 	// +kubebuilder:validation:Required

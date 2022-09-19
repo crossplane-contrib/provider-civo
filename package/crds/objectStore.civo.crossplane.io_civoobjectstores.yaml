@@ -82,7 +82,7 @@ spec:
                 type: integer
               name:
                 description: Name is user-given name for the object store. It should
-                  be a S3 compatiable name
+                  be a S3 compatible name
                 type: string
               providerConfigRef:
                 description: ProviderConfigReference specifies how the provider that

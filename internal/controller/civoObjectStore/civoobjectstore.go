@@ -41,13 +41,8 @@ import (
 )
 
 const (
-	errManagedUpdateFailed = "cannot update objectStore custom resource"
-	errGenObservation      = "cannot generate observation"
-	errNotCivoObjectStore  = "managed resource is not a CivoObjectStore"
-	errCreateObjectStore   = "cannot create ObjectStore"
-	errDeleteObjectStore   = "cannot delete ObjectStore"
-	errGetSSHPubKeySecret  = "cannot get ssh public key secret %s"
-	errUpdateObjectStore   = "cannot update ObjectStore"
+	errNotCivoObjectStore = "managed resource is not a CivoObjectStore"
+	errDeleteObjectStore  = "cannot delete ObjectStore"
 )
 
 type connecter struct {
@@ -136,10 +131,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		if err != nil {
 			return managed.ExternalObservation{ResourceExists: false}, err
 		}
-		cd, err := connectionDetails(civoObjectStore, cred)
-		if err != nil {
-			return managed.ExternalObservation{ResourceExists: true}, err
-		}
+		cd := connectionDetails(civoObjectStore, cred)
 		secretName := fmt.Sprintf("%s-%s", cr.Spec.ConnectionDetails.ConnectionSecretNamePrefix, cr.Name)
 
 		connectionSecret := &corev1.Secret{

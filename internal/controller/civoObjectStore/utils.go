@@ -7,6 +7,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 )
 
+// FindObjectStore finds objectstore
 func FindObjectStore(c *civogo.Client, search string) *civogo.ObjectStore {
 	objectstores, err := c.ListObjectStores()
 	if err != nil {
@@ -26,6 +27,7 @@ func FindObjectStore(c *civogo.Client, search string) *civogo.ObjectStore {
 	return nil
 }
 
+// FindObjectStoreCreds finds creds
 func FindObjectStoreCreds(c *civogo.Client, search string) *civogo.ObjectStore {
 	objectstores, err := c.ListObjectStores()
 	if err != nil {
@@ -45,15 +47,15 @@ func FindObjectStoreCreds(c *civogo.Client, search string) *civogo.ObjectStore {
 	return nil
 }
 
-func connectionDetails(objectStore *civogo.ObjectStore, objectStoreCred *civogo.ObjectStoreCredential) (managed.ConnectionDetails, error) {
+func connectionDetails(objectStore *civogo.ObjectStore, objectStoreCred *civogo.ObjectStoreCredential) managed.ConnectionDetails {
 	if objectStore.Status == "ready" {
 		return managed.ConnectionDetails{
 			xpv1.ResourceCredentialsSecretEndpointKey: []byte(objectStore.BucketURL),
 			"accessKeyID":     []byte(objectStoreCred.AccessKeyID),
 			"secretAccessKey": []byte(objectStoreCred.SecretAccessKeyID),
-		}, nil
+		}
 	}
 	return managed.ConnectionDetails{
 		xpv1.ResourceCredentialsSecretEndpointKey: []byte(objectStore.BucketURL),
-	}, nil
+	}
 }
