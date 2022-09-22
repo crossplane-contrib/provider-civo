@@ -34,6 +34,7 @@ import (
 	"github.com/crossplane-contrib/provider-civo/apis"
 	civokubernetes "github.com/crossplane-contrib/provider-civo/internal/controller/civokubernetes"
 	civoobjectstore "github.com/crossplane-contrib/provider-civo/internal/controller/civoobjectstore"
+	civoobjectstorecredentials "github.com/crossplane-contrib/provider-civo/internal/controller/civoobjectstorecredentials"
 	civoprovider "github.com/crossplane-contrib/provider-civo/internal/controller/provider"
 )
 
@@ -83,5 +84,6 @@ func main() {
 	kingpin.FatalIfError(civoinstance.Setup(mgr, log, rl), "Cannot setup Civo Instance controllers")
 	kingpin.FatalIfError(civoprovider.Setup(mgr, log, rl), "Cannot setup Provider controllers")
 	kingpin.FatalIfError(civoobjectstore.Setup(mgr, log, rl), "Cannot setup Object Store controllers")
+	kingpin.FatalIfError(civoobjectstorecredentials.Setup(mgr, log, rl), "Cannot setup Object Store Credentials controllers")
 	kingpin.FatalIfError(mgr.Start(ctrl.SetupSignalHandler()), "Cannot start controller manager")
 }
