@@ -3,9 +3,11 @@ package civoobjectstorecredentials
 import (
 	"github.com/apex/log"
 	"github.com/civo/civogo"
+	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 )
 
-func FindObjectStoreCredentials(c *civogo.Client, search string) *civogo.ObjectStoreCredential {
+// FindObjectStoreCredential finds objectstore credential
+func FindObjectStoreCredential(c *civogo.Client, search string) *civogo.ObjectStoreCredential {
 	objectStoreCredentials, err := c.ListObjectStoreCredentials()
 	if err != nil {
 		log.Errorf("Unable to fetch object store %s", err)
@@ -13,9 +15,8 @@ func FindObjectStoreCredentials(c *civogo.Client, search string) *civogo.ObjectS
 	}
 
 	result := civogo.ObjectStoreCredential{}
-
 	for _, value := range objectStoreCredentials.Items {
-		if value.Name == search || value.ID == search {
+		if value.Name == search || value.ID == search || value.AccessKeyID == search {
 			result = value
 			return &result
 		}
@@ -24,21 +25,12 @@ func FindObjectStoreCredentials(c *civogo.Client, search string) *civogo.ObjectS
 	return nil
 }
 
-func FindObjectStoreCredentialsCreds(c *civogo.Client, search string) *civogo.ObjectStoreCredential {
-	objectstorecredentials, err := c.ListObjectStoreCredentials()
-	if err != nil {
-		log.Errorf("Unable to fetch object store credential %s", err)
-		return nil
-	}
-
-	result := civogo.ObjectStoreCredential{}
-
-	for _, value := range objectstorecredentials.Items {
-		if value.AccessKeyID == search {
-			result = value
-			return &result
+func connectionDetails(objectStoreCredential *civogo.ObjectStoreCredential) managed.ConnectionDetails {
+	if objectStoreCredential.Status == "ready" {
+		return managed.ConnectionDetails{
+			"accessKeyID":     []byte(objectStoreCredential.AccessKeyID),
+			"secretAccessKey": []byte(objectStoreCredential.SecretAccessKeyID),
 		}
 	}
-	log.Infof("Object store was not found %s", search)
 	return nil
 }

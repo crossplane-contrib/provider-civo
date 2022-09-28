@@ -23,7 +23,7 @@ import (
 	clusterv1alpha1 "github.com/crossplane-contrib/provider-civo/apis/civo/cluster/v1alpha1"
 	instancev1alpha1 "github.com/crossplane-contrib/provider-civo/apis/civo/instance/v1alpha1"
 	objectstorev1alpha1 "github.com/crossplane-contrib/provider-civo/apis/civo/objectstore/v1alpha1"
-	objectstorecredentialv1alpha1 "github.com/crossplane-contrib/provider-civo/apis/civo/objectstorecredentials/v1alpha1"
+	objectstorecredentialv1alpha1 "github.com/crossplane-contrib/provider-civo/apis/civo/objectstorecredential/v1alpha1"
 	providerv1alpha1 "github.com/crossplane-contrib/provider-civo/apis/civo/provider/v1alpha1"
 )
 

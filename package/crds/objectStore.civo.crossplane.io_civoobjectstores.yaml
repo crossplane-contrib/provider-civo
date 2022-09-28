@@ -51,9 +51,7 @@ spec:
             properties:
               accessKey:
                 description: Name of the CivoObjectStore access key if the provided
-                  access key is found it'll be the owner for object store, else a
-                  new credential will be created which can be accessed via the location
-                  given in connection details
+                  access key is found it'll be the owner for object store
                 type: string
               connectionDetails:
                 description: Location of the CivoObjectStore Connection
@@ -136,19 +134,19 @@ spec:
                 properties:
                   id:
                     type: string
-                  max_size:
+                  maxSize:
                     type: integer
                   name:
                     type: string
-                  objectstore_endpoint:
+                  objectStoreEndpoint:
                     type: string
                   status:
                     type: string
                 required:
                 - id
-                - max_size
+                - maxSize
                 - name
-                - objectstore_endpoint
+                - objectStoreEndpoint
                 - status
                 type: object
               conditions:

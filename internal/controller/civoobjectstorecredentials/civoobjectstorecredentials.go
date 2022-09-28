@@ -28,13 +28,14 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
-	"github.com/crossplane-contrib/provider-civo/apis/civo/objectstorecredentials/v1alpha1"
+	"github.com/crossplane-contrib/provider-civo/apis/civo/objectstorecredential/v1alpha1"
 	v1alpha1provider "github.com/crossplane-contrib/provider-civo/apis/civo/provider/v1alpha1"
 	"github.com/crossplane-contrib/provider-civo/pkg/civocli"
 )
@@ -56,14 +57,14 @@ type external struct {
 // Setup adds a controller that reconciles ProviderConfigs by accounting for
 // their current usage.
 func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
-	name := providerconfig.ControllerName(v1alpha1.CivoObjectStoreCredentialsGroupKind)
+	name := providerconfig.ControllerName(v1alpha1.CivoObjectStoreCredentialGroupKind)
 
 	o := controller.Options{
 		RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
 	}
 
 	r := managed.NewReconciler(mgr,
-		resource.ManagedKind(v1alpha1.CivoObjectStoreCredentialsGroupVersionKind),
+		resource.ManagedKind(v1alpha1.CivoObjectStoreCredentialGroupVersionKind),
 		managed.WithExternalConnecter(&connecter{client: mgr.GetClient()}),
 		managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
 		managed.WithLogger(l.WithValues("civoobjectstorecredentials", name)),
@@ -72,12 +73,12 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		WithOptions(o).
-		For(&v1alpha1.CivoObjectStoreCredentials{}).
+		For(&v1alpha1.CivoObjectStoreCredential{}).
 		Complete(r)
 }
 
 func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	objectStoreCredentials, ok := mg.(*v1alpha1.CivoObjectStoreCredentials)
+	objectStoreCredentials, ok := mg.(*v1alpha1.CivoObjectStoreCredential)
 	if !ok {
 		return nil, errors.New(errNotCivoObjectStoreCredentials)
 	}
@@ -110,11 +111,11 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.E
 }
 
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
-	cr, ok := mg.(*v1alpha1.CivoObjectStoreCredentials)
+	cr, ok := mg.(*v1alpha1.CivoObjectStoreCredential)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotCivoObjectStoreCredentials)
 	}
-	civoObjectStoreCredentials := FindObjectStoreCredentials(e.civoGoClient, cr.Spec.Name)
+	civoObjectStoreCredentials := FindObjectStoreCredential(e.civoGoClient, cr.Spec.Name)
 	if civoObjectStoreCredentials == nil {
 		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
@@ -122,11 +123,30 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	switch civoObjectStoreCredentials.Status {
 	case "ready":
 		cr.Status.AtProvider.ID = civoObjectStoreCredentials.ID
-		cr.Status.AtProvider.Name = civoObjectStoreCredentials.Name
 		cr.Status.AtProvider.Status = civoObjectStoreCredentials.Status
-		cr.Status.AtProvider.MaxSize = civoObjectStoreCredentials.MaxSizeGB
 
-		_, err := e.Update(ctx, mg)
+		cd := connectionDetails(civoObjectStoreCredentials)
+		secretName := fmt.Sprintf("%s-%s", cr.Spec.ConnectionDetails.ConnectionSecretNamePrefix, cr.Name)
+
+		connectionSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      secretName,
+				Namespace: cr.Spec.ConnectionDetails.ConnectionSecretNamespace,
+			},
+			Data: cd,
+		}
+		err := e.kube.Get(ctx, types.NamespacedName{
+			Namespace: cr.Spec.ConnectionDetails.ConnectionSecretNamespace,
+			Name:      secretName,
+		}, connectionSecret)
+
+		if err != nil {
+			err = e.kube.Create(ctx, connectionSecret, &client.CreateOptions{})
+			if err != nil {
+				return managed.ExternalObservation{ResourceExists: true}, err
+			}
+		}
+		_, err = e.Update(ctx, mg)
 		if err != nil {
 			log.Warnf("update error:%s ", err.Error())
 			return managed.ExternalObservation{ResourceExists: true}, err
@@ -138,9 +158,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		cr.Status.Message = "ObjectStoreCredentials is being created"
 		cr.SetConditions(xpv1.Creating())
 		cr.Status.AtProvider.ID = civoObjectStoreCredentials.ID
-		cr.Status.AtProvider.Name = civoObjectStoreCredentials.Name
 		cr.Status.AtProvider.Status = civoObjectStoreCredentials.Status
-		cr.Status.AtProvider.MaxSize = civoObjectStoreCredentials.MaxSizeGB
 		return managed.ExternalObservation{
 			ResourceExists:   true,
 			ResourceUpToDate: false,
@@ -158,68 +176,65 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 }
 
 func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	cr, ok := mg.(*v1alpha1.CivoObjectStoreCredentials)
+	cr, ok := mg.(*v1alpha1.CivoObjectStoreCredential)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotCivoObjectStoreCredentials)
 	}
 
-	civoObjectStoreCredentials := FindObjectStoreCredentials(e.civoGoClient, cr.Spec.Name)
+	civoObjectStoreCredentials := FindObjectStoreCredential(e.civoGoClient, cr.Spec.Name)
 	if civoObjectStoreCredentials != nil {
 		return managed.ExternalCreation{}, nil
 	}
 
-	var createObjectStoreCredentialsRequest civogo.CreateObjectStoreCredentialRequest
-	cred := FindObjectStoreCredentialsCreds(e.civoGoClient, cr.Spec.AccessKeyID)
-	if cred != nil {
-		createObjectStoreCredentialsRequest = civogo.CreateObjectStoreCredentialRequest{
-			Name:              cr.Status.AtProvider.Name,
-			MaxSizeGB:         &cr.Status.AtProvider.MaxSize,
-			AccessKeyID:       &cred.AccessKeyID,
-			SecretAccessKeyID: &cred.SecretAccessKeyID,
-			Region:            e.civoGoClient.Region,
-		}
-	} else {
-		createObjectStoreCredentialsRequest = civogo.CreateObjectStoreCredentialRequest{
-			Name:      cr.Status.AtProvider.Name,
-			MaxSizeGB: &cr.Status.AtProvider.MaxSize,
-			Region:    e.civoGoClient.Region,
-		}
+	createObjectStoreCredentialsRequest := civogo.CreateObjectStoreCredentialRequest{
+		Name:              cr.Spec.Name,
+		Region:            e.civoGoClient.Region,
+		AccessKeyID:       nil,
+		SecretAccessKeyID: nil,
 	}
+	if cr.Spec.AccessKeyID != nil {
+		createObjectStoreCredentialsRequest.AccessKeyID = cr.Spec.AccessKeyID
+	}
+
 	_, err := e.civoGoClient.NewObjectStoreCredential(&createObjectStoreCredentialsRequest)
-	cr.SetConditions(xpv1.Creating())
 	if err != nil {
 		return managed.ExternalCreation{
 			ExternalNameAssigned: true,
 		}, err
 	}
+	cr.SetConditions(xpv1.Creating())
+
 	return managed.ExternalCreation{
 		ExternalNameAssigned: true,
 	}, nil
 }
 
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	cr, ok := mg.(*v1alpha1.CivoObjectStoreCredentials)
+	cr, ok := mg.(*v1alpha1.CivoObjectStoreCredential)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotCivoObjectStoreCredentials)
 	}
-	civoObjectStoreCredentials := FindObjectStoreCredentials(e.civoGoClient, cr.Spec.Name)
-	updateObjectStoreCredentialsRequest := civogo.UpdateObjectStoreCredentialRequest{
-		MaxSizeGB: &cr.Status.AtProvider.MaxSize,
-		Region:    e.civoGoClient.Region,
-	}
-	_, err := e.civoGoClient.UpdateObjectStoreCredential(civoObjectStoreCredentials.ID, &updateObjectStoreCredentialsRequest)
-	if err != nil {
-		return managed.ExternalUpdate{}, err
+	civoObjectStoreCredentials := FindObjectStoreCredential(e.civoGoClient, cr.Spec.Name)
+	var updateObjectStoreCredentialsRequest civogo.UpdateObjectStoreCredentialRequest
+	if cr.Spec.AccessKeyID == nil || cr.Spec.AccessKeyID != &civoObjectStoreCredentials.AccessKeyID {
+		updateObjectStoreCredentialsRequest = civogo.UpdateObjectStoreCredentialRequest{
+			AccessKeyID: cr.Spec.AccessKeyID,
+			Region:      e.civoGoClient.Region,
+		}
+		_, err := e.civoGoClient.UpdateObjectStoreCredential(civoObjectStoreCredentials.ID, &updateObjectStoreCredentialsRequest)
+		if err != nil {
+			return managed.ExternalUpdate{}, err
+		}
 	}
 	return managed.ExternalUpdate{}, nil
 }
 
 func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1alpha1.CivoObjectStoreCredentials)
+	cr, ok := mg.(*v1alpha1.CivoObjectStoreCredential)
 	if !ok {
 		return errors.New(errNotCivoObjectStoreCredentials)
 	}
-	objectStoreCredentials := FindObjectStoreCredentials(e.civoGoClient, cr.Spec.Name)
+	objectStoreCredentials := FindObjectStoreCredential(e.civoGoClient, cr.Spec.Name)
 	cr.SetConditions(xpv1.Deleting())
 	_, err := e.civoGoClient.DeleteObjectStoreCredential(objectStoreCredentials.ID)
 	return errors.Wrap(err, errDeleteObjectStoreCredentials)

@@ -9,8 +9,8 @@ import (
 type CivoObjectStoreObservation struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
-	MaxSize   int    `json:"max_size"`
-	BucketURL string `json:"objectstore_endpoint"`
+	MaxSize   int    `json:"maxSize"`
+	BucketURL string `json:"objectStoreEndpoint"`
 	Status    string `json:"status"`
 }
 
@@ -36,8 +36,7 @@ type CivoObjectStoreSpec struct {
 	MaxSizeGB int64 `json:"maxSize,omitempty"`
 
 	// Name of the CivoObjectStore access key
-	// if the provided access key is found it'll be the owner
-	// for object store, else a new credential will be created which can be accessed via the location given in connection details
+	// if the provided access key is found it'll be the owner for object store
 	// +optional
 	AccessKey string `json:"accessKey,omitempty"`
 
