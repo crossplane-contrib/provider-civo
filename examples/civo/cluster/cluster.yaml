@@ -1,5 +1,5 @@
-kind: CivoKubernetes
 apiVersion: cluster.civo.crossplane.io/v1alpha1
+kind: CivoKubernetes
 metadata: 
   name: test-crossplane
 spec:
