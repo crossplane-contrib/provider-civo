@@ -25,7 +25,7 @@ const (
 // CivoClient is a client for communicating with Civo.
 type CivoClient struct {
 	apikey       string
-	civoGoClient *civogo.Client
+	CivoGoClient *civogo.Client
 }
 
 func emptyIfNil(in *string) string {
@@ -69,13 +69,13 @@ func NewCivoClient(apiKey string, region string) (*CivoClient, error) {
 	}
 	return &CivoClient{
 		apikey:       apiKey,
-		civoGoClient: client,
+		CivoGoClient: client,
 	}, nil
 }
 
 // UpdateInstance updates a civo instance
 func (c *CivoClient) UpdateInstance(id string, instance *v1alpha1.CivoInstance) error {
-	civoInstance, err := c.civoGoClient.GetInstance(id)
+	civoInstance, err := c.CivoGoClient.GetInstance(id)
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func (c *CivoClient) UpdateInstance(id string, instance *v1alpha1.CivoInstance) 
 	if civoInstance.Notes != instance.Spec.InstanceConfig.Notes {
 		civoInstance.Notes = instance.Spec.InstanceConfig.Notes
 	}
-	_, err = c.civoGoClient.UpdateInstance(civoInstance)
+	_, err = c.CivoGoClient.UpdateInstance(civoInstance)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func (c *CivoClient) UpdateInstance(id string, instance *v1alpha1.CivoInstance) 
 
 // CreateNewInstance creates a new instance on Civo.
 func (c *CivoClient) CreateNewInstance(instance *v1alpha1.CivoInstance, sshPubKey, diskImageName string) (*civogo.Instance, error) {
-	config, err := c.civoGoClient.NewInstanceConfig()
+	config, err := c.CivoGoClient.NewInstanceConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -107,10 +107,10 @@ func (c *CivoClient) CreateNewInstance(instance *v1alpha1.CivoInstance, sshPubKe
 	config.PublicIPRequired = emptyIfNil(&instance.Spec.InstanceConfig.PublicIPRequired)
 
 	if len(sshPubKey) > 0 {
-		if sshKey, err := c.civoGoClient.FindSSHKey(config.Hostname); err == nil {
+		if sshKey, err := c.CivoGoClient.FindSSHKey(config.Hostname); err == nil {
 			config.SSHKeyID = sshKey.ID
 		} else {
-			newSSHKey, err := c.civoGoClient.NewSSHKey(config.Hostname, sshPubKey)
+			newSSHKey, err := c.CivoGoClient.NewSSHKey(config.Hostname, sshPubKey)
 			if err != nil {
 				return nil, err
 			}
@@ -118,12 +118,12 @@ func (c *CivoClient) CreateNewInstance(instance *v1alpha1.CivoInstance, sshPubKe
 		}
 	}
 
-	template, err := c.civoGoClient.FindDiskImage(diskImageName)
+	template, err := c.CivoGoClient.FindDiskImage(diskImageName)
 	if err != nil {
 		return nil, err
 	}
 	config.TemplateID = template.ID
-	result, err := c.civoGoClient.CreateInstance(config)
+	result, err := c.CivoGoClient.CreateInstance(config)
 	if err != nil {
 		return nil, err
 	}
@@ -132,16 +132,16 @@ func (c *CivoClient) CreateNewInstance(instance *v1alpha1.CivoInstance, sshPubKe
 
 // DeleteInstance deletes a instance on Civo.
 func (c *CivoClient) DeleteInstance(id string) error {
-	instance, err := c.civoGoClient.GetInstance(id)
+	instance, err := c.CivoGoClient.GetInstance(id)
 	if err != nil {
 		return err
 	}
-	resp, err := c.civoGoClient.DeleteInstance(instance.ID)
+	resp, err := c.CivoGoClient.DeleteInstance(instance.ID)
 	if err != nil {
 		log.Debugf("error [%s %s %s %s]", resp.Result, resp.ErrorDetails, resp.ErrorCode, resp.ErrorReason)
 	}
-	if sshKey, err := c.civoGoClient.FindSSHKey(instance.Hostname); err == nil {
-		_, err := c.civoGoClient.DeleteSSHKey(sshKey.ID)
+	if sshKey, err := c.CivoGoClient.FindSSHKey(instance.Hostname); err == nil {
+		_, err := c.CivoGoClient.DeleteSSHKey(sshKey.ID)
 		if err != nil {
 			return err
 		}
@@ -151,7 +151,7 @@ func (c *CivoClient) DeleteInstance(id string) error {
 
 // GetInstance gets a instance on Civo.
 func (c *CivoClient) GetInstance(id string) (*civogo.Instance, error) {
-	instance, err := c.civoGoClient.GetInstance(id)
+	instance, err := c.CivoGoClient.GetInstance(id)
 	if err != nil {
 		if strings.Contains(err.Error(), "DatabaseInstanceNotFoundError") {
 			return nil, nil
@@ -164,7 +164,7 @@ func (c *CivoClient) GetInstance(id string) (*civogo.Instance, error) {
 // GetK3sCluster gets a K3s cluster on Civo.
 func (c *CivoClient) GetK3sCluster(clusterName string) (*civogo.KubernetesCluster, error) {
 
-	kubernetesCluster, err := c.civoGoClient.FindKubernetesCluster(clusterName)
+	kubernetesCluster, err := c.CivoGoClient.FindKubernetesCluster(clusterName)
 	if err != nil {
 		if strings.Contains(err.Error(), "ZeroMatchesError") {
 			return nil, nil
@@ -179,7 +179,7 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string,
 	pools []civogo.KubernetesClusterPoolConfig, applications []string, cni *string, version *string) error {
 
 	// Find the default network ID
-	network, err := c.civoGoClient.GetDefaultNetwork()
+	network, err := c.CivoGoClient.GetDefaultNetwork()
 	if err != nil {
 		return err
 	}
@@ -202,7 +202,7 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string,
 	}
 
 	cfg := &civogo.KubernetesClusterConfig{
-		Region:            c.civoGoClient.Region,
+		Region:            c.CivoGoClient.Region,
 		Name:              clusterName,
 		Tags:              defaultTags,
 		NetworkID:         network.ID,
@@ -212,7 +212,7 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string,
 		CNIPlugin:         cp,
 	}
 
-	kubernetesCluster, err := c.civoGoClient.NewKubernetesClusters(cfg)
+	kubernetesCluster, err := c.CivoGoClient.NewKubernetesClusters(cfg)
 	if err != nil {
 		return err
 	}
@@ -226,7 +226,7 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string,
 func (c *CivoClient) UpdateK3sCluster(desiredCluster *providerCivoCluster.CivoKubernetes,
 	remoteCivoCluster *civogo.KubernetesCluster, provider *v1alpha1provider.ProviderConfig) error {
 
-	_, err := c.civoGoClient.UpdateKubernetesCluster(desiredCluster.Spec.Name,
+	_, err := c.CivoGoClient.UpdateKubernetesCluster(desiredCluster.Spec.Name,
 		&civogo.KubernetesClusterConfig{
 			Pools: desiredCluster.Spec.Pools,
 		})
@@ -238,7 +238,7 @@ func (c *CivoClient) UpdateK3sCluster(desiredCluster *providerCivoCluster.CivoKu
 func (c *CivoClient) UpdateK3sClusterVersion(desiredCluster *providerCivoCluster.CivoKubernetes,
 	remoteCivoCluster *civogo.KubernetesCluster, provider *v1alpha1provider.ProviderConfig) error {
 
-	_, err := c.civoGoClient.UpdateKubernetesCluster(desiredCluster.Spec.Name,
+	_, err := c.CivoGoClient.UpdateKubernetesCluster(desiredCluster.Spec.Name,
 		&civogo.KubernetesClusterConfig{
 			KubernetesVersion: *desiredCluster.Spec.Version,
 		})
@@ -253,7 +253,7 @@ func (c *CivoClient) DeleteK3sCluster(name string) error {
 	if err != nil {
 		return err
 	}
-	resp, err := c.civoGoClient.DeleteKubernetesCluster(kubernetesCluster.ID)
+	resp, err := c.CivoGoClient.DeleteKubernetesCluster(kubernetesCluster.ID)
 	if err != nil {
 		log.Debugf("error [%s %s %s %s]", resp.Result, resp.ErrorDetails, resp.ErrorCode, resp.ErrorReason)
 	}
