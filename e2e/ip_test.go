@@ -80,6 +80,76 @@ func TestIPAssignedToInstance(t *testing.T) {
 	}, "2m", "5s").Should(Equal(instance.Status.AtProvider.ID))
 }
 
+func TestIPUnassign(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	ip, err := getOrCreateIP("test-ip")
+	g.Expect(err).ShouldNot(HaveOccurred())
+
+	g.Eventually(func() string {
+		err = e2eTest.tenantClient.Get(context.TODO(), client.ObjectKeyFromObject(ip), ip)
+		return ip.Status.AtProvider.Address
+	}, "2m", "5s").ShouldNot(BeEmpty())
+
+	instance, err := getOrCreateInstance("e2e-test-instance", "test-ip")
+	g.Expect(err).ShouldNot(HaveOccurred())
+
+	g.Eventually(func() string {
+		err = e2eTest.tenantClient.Get(context.TODO(), client.ObjectKeyFromObject(ip), ip)
+		return ip.Status.AtProvider.AssignedTo.ID
+	}, "2m", "5s").Should(BeEmpty())
+
+	retry(30, 5*time.Second, func() error {
+		e2eTest.tenantClient.Get(context.TODO(), client.ObjectKey{Name: "e2e-test-instance"}, instance)
+		if instance.Status.AtProvider.ID == "" {
+			return fmt.Errorf("instance id not updated yet")
+		}
+		return nil
+	})
+	g.Expect(instance.Status.AtProvider.ID).ShouldNot(BeEmpty())
+
+	ip, err = assignIP(ip, instance.Status.AtProvider.ID)
+	g.Expect(err).ShouldNot(HaveOccurred())
+
+	g.Eventually(func() string {
+		err = e2eTest.tenantClient.Get(context.TODO(), client.ObjectKeyFromObject(ip), ip)
+		return ip.Status.AtProvider.AssignedTo.ID
+	}, "2m", "5s").Should(Equal(instance.Status.AtProvider.ID))
+
+	instance, err = unassignIP(instance)
+	g.Expect(err).ShouldNot(HaveOccurred())
+
+	g.Eventually(func() string {
+		err = e2eTest.tenantClient.Get(context.TODO(), client.ObjectKeyFromObject(instance), instance)
+		return instance.Spec.InstanceConfig.ReservedIP
+	}, "2m", "5s").Should(Equal(""))
+}
+
+func TestDeleteIP(t *testing.T) {
+	g := NewGomegaWithT(t)
+
+	ip, err := getOrCreateIP("test-ip")
+	g.Expect(err).ShouldNot(HaveOccurred())
+
+	g.Eventually(func() string {
+		err = e2eTest.tenantClient.Get(context.TODO(), client.ObjectKeyFromObject(ip), ip)
+		return ip.Status.AtProvider.Address
+	}, "2m", "5s").ShouldNot(BeEmpty())
+
+	err = deleteIP(ip.Name)
+	g.Expect(err).ShouldNot(HaveOccurred())
+}
+
+func deleteIP(name string) error {
+	ip := &civoip.CivoIP{}
+	err := e2eTest.tenantClient.Get(context.TODO(), client.ObjectKey{Name: name}, ip)
+	if errors.IsNotFound(err) {
+		return nil
+	}
+	err = e2eTest.tenantClient.Delete(context.TODO(), ip)
+	return err
+}
+
 func getOrCreateIP(name string) (*civoip.CivoIP, error) {
 	ip := &civoip.CivoIP{}
 	err := e2eTest.tenantClient.Get(context.TODO(), client.ObjectKey{Name: name}, ip)
@@ -115,6 +185,17 @@ func assignIP(ip *civoip.CivoIP, instanceID string) (*civoip.CivoIP, error) {
 		return nil, err
 	}
 	return ip, nil
+}
+
+func unassignIP(instance *civoinstance.CivoInstance) (*civoinstance.CivoInstance, error) {
+
+	instance.Spec.InstanceConfig.ReservedIP = ""
+	err := e2eTest.tenantClient.Status().Update(context.TODO(), instance)
+
+	if err != nil {
+		return nil, err
+	}
+	return instance, nil
 }
 
 func getOrCreateInstance(name string, reservedIPName string) (*civoinstance.CivoInstance, error) {

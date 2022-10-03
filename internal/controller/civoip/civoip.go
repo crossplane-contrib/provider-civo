@@ -39,8 +39,6 @@ import (
 
 const (
 	errNotCivoIP = "not a CivoIP resource"
-	errRenameIP  = "cannot rename IP"
-	errDeleteIP  = "cannot delete IP"
 )
 
 type connecter struct {

@@ -42,7 +42,7 @@ type CivoInstanceConfig struct {
 	PublicIPRequired string `json:"publicIPRequired,omitempty"`
 
 	// +optional
-       // Name of the CivoIP custom resource
+	// Name of the CivoIP custom resource
 	ReservedIP string `json:"reserved_ip,omitempty"`
 }
 

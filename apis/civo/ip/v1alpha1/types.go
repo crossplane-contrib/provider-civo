@@ -13,8 +13,8 @@ type CivoIPSpec struct {
 // CivoIPObservation observation fields
 type CivoIPObservation struct {
 	ID         string     `json:"id"`
-	Address    string     `json:"address, omitempty"`
-	AssignedTo AssignedTo `json:"assigned_to, omitempty"`
+	Address    string     `json:"address,omitempty"`
+	AssignedTo AssignedTo `json:"assigned_to,omitempty"`
 }
 
 // AssignedTo represents IP assigned to resource

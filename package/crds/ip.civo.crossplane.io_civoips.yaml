@@ -122,8 +122,6 @@ spec:
                   id:
                     type: string
                 required:
-                - address
-                - assigned_to
                 - id
                 type: object
               conditions:

@@ -48,7 +48,6 @@ const (
 	errGenObservation      = "cannot generate observation"
 	errNotCivoInstance     = "managed resource is not a CivoInstance"
 	errCreateInstance      = "cannot create instance"
-	errDeleteInstance      = "cannot delete instance"
 	errGetSSHPubKeySecret  = "cannot get ssh public key secret %s"
 	errUpdateInstance      = "cannot update instance"
 )

@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-var CivoRegion, CivoURL string
+var CivoRegion string
 
 var e2eTest *E2ETest
 
@@ -171,7 +171,8 @@ func (e *E2ETest) provisionCluster() {
 	}
 	for _, cluster := range list.Items {
 		if cluster.Name == "crossplane-e2e-test" {
-			e.cluster = &cluster
+			clusterName := cluster
+			e.cluster = &clusterName
 			return
 		}
 	}
@@ -204,7 +205,7 @@ func (e *E2ETest) cleanUpCluster() {
 	fmt.Println("Attempting Test Cleanup")
 	if e.cluster != nil {
 		fmt.Printf("Deleting Cluster: %s\n", e.cluster.ID)
-		//e.civo.DeleteKubernetesCluster(e.cluster.ID)
+		e.civo.DeleteKubernetesCluster(e.cluster.ID)
 	}
 }
 
@@ -242,7 +243,7 @@ func setupNewManager(secret *corev1.Secret, kubeconfig string) manager.Manager {
 
 	klog.Infof("Starting Civo Crossplane Provider with CIVO_API_URL: %s, CIVO_REGION: %s, CIVO_CLUSTER_ID: %s", APIURL, Region, ClusterID)
 	klog.Info("Please make sure CRD's are installed in the cluster. They are inside /package/crds/. Also, apply the provider.yaml file in examples/civo/provider. Sleeping for one minute until CRD's are applied.")
-	//time.Sleep(1 * time.Minute)
+	time.Sleep(1 * time.Minute)
 
 	zl := zap.New(zap.UseDevMode(*debug))
 	log := logging.NewLogrLogger(zl.WithName("provider-template"))
