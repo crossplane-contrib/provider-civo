@@ -4,18 +4,18 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
-  name: civoinstances.instance.civo.crossplane.io
+  name: civoips.ip.civo.crossplane.io
 spec:
-  group: instance.civo.crossplane.io
+  group: ip.civo.crossplane.io
   names:
     categories:
     - crossplane
     - managed
     - civo
-    kind: CivoInstance
-    listKind: CivoInstanceList
-    plural: civoinstances
-    singular: civoinstance
+    kind: CivoIP
+    listKind: CivoIPList
+    plural: civoips
+    singular: civoip
   scope: Cluster
   versions:
   - additionalPrinterColumns:
@@ -28,7 +28,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A CivoInstance is an example API type. Please replace `PROVIDER-NAME`
+        description: A CivoIP is an example API type. Please replace `PROVIDER-NAME`
           with your actual provider name, like `aws`, `azure`, `gcp`, `alibaba`
         properties:
           apiVersion:
@@ -44,7 +44,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CivoInstanceSpec holds the instanceConfig
+            description: CivoIPSpec holds the instanceConfig
             properties:
               deletionPolicy:
                 description: DeletionPolicy specifies what will happen to the underlying
@@ -55,50 +55,6 @@ spec:
                 - Orphan
                 - Delete
                 type: string
-              instanceConfig:
-                description: CivoInstanceConfig specs for the CivoInstance
-                properties:
-                  diskImage:
-                    type: string
-                  hostname:
-                    type: string
-                  initialUser:
-                    type: string
-                  notes:
-                    type: string
-                  publicIPRequired:
-                    type: string
-                  region:
-                    type: string
-                  reserved_ip:
-                    description: Name of the CivoIP custom resource
-                    type: string
-                  script:
-                    type: string
-                  size:
-                    type: string
-                  sshPubKeyRef:
-                    description: SecretReference location of the SSH Public Key Secret
-                    properties:
-                      key:
-                        description: Key whose value will be used.
-                        type: string
-                      name:
-                        description: Name of the secret.
-                        type: string
-                      namespace:
-                        description: Namespace of the secret.
-                        type: string
-                    required:
-                    - key
-                    - name
-                    - namespace
-                    type: object
-                  tags:
-                    items:
-                      type: string
-                    type: array
-                type: object
               providerConfigRef:
                 description: ProviderConfigReference specifies how the provider that
                   will be used to create, observe, update, and delete this managed
@@ -138,25 +94,32 @@ spec:
                 - name
                 - namespace
                 type: object
-            required:
-            - instanceConfig
             type: object
           status:
-            description: CivoInstanceStatus status of the resource
+            description: CivoIPStatus status of the resource
             properties:
               atProvider:
-                description: CivoInstanceObservation observation fields
+                description: CivoIPObservation observation fields
                 properties:
-                  createdAt:
-                    format: date-time
+                  address:
                     type: string
+                  assigned_to:
+                    description: AssignedTo represents IP assigned to resource
+                    properties:
+                      id:
+                        type: string
+                      name:
+                        type: string
+                      type:
+                        description: 'Type can be one of the following: - instance
+                          - loadbalancer'
+                        type: string
+                    required:
+                    - id
+                    - name
+                    - type
+                    type: object
                   id:
-                    type: string
-                  ipv4:
-                    type: string
-                  observableField:
-                    type: string
-                  state:
                     type: string
                 required:
                 - id

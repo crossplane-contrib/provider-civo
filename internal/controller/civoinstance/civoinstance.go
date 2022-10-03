@@ -15,20 +15,26 @@ package civoinstance
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/civo/civogo"
 	v1alpha1provider "github.com/crossplane-contrib/provider-civo/apis/civo/provider/v1alpha1"
 	"github.com/crossplane-contrib/provider-civo/pkg/civocli"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/pkg/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/klog"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"github.com/crossplane-contrib/provider-civo/apis/civo/instance/v1alpha1"
+	ipv1alpha1 "github.com/crossplane-contrib/provider-civo/apis/civo/ip/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
@@ -42,7 +48,6 @@ const (
 	errGenObservation      = "cannot generate observation"
 	errNotCivoInstance     = "managed resource is not a CivoInstance"
 	errCreateInstance      = "cannot create instance"
-	errDeleteInstance      = "cannot delete instance"
 	errGetSSHPubKeySecret  = "cannot get ssh public key secret %s"
 	errUpdateInstance      = "cannot update instance"
 )
@@ -52,8 +57,9 @@ type connecter struct {
 }
 
 type external struct {
-	kube       client.Client
-	civoClient *civocli.CivoClient
+	kube         client.Client
+	civoClient   *civocli.CivoClient
+	civoGoClient *civogo.Client
 }
 
 // Setup adds a controller that reconciles ProviderConfigs by accounting for
@@ -69,7 +75,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 		resource.ManagedKind(v1alpha1.CivoInstancGroupVersionKind),
 		managed.WithExternalConnecter(&connecter{client: mgr.GetClient()}),
 		managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
-		managed.WithLogger(l.WithValues("civokubernetes", name)),
+		managed.WithLogger(l.WithValues("civoinstance", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
 
 	return ctrl.NewControllerManagedBy(mgr).
@@ -132,6 +138,17 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	switch civoInstance.Status {
 	case civocli.StateActive:
 		cr.SetConditions(xpv1.Available())
+		if cr.Spec.InstanceConfig.ReservedIP != "" {
+			ip := &ipv1alpha1.CivoIP{}
+			err = e.kube.Get(ctx, types.NamespacedName{Name: cr.Spec.InstanceConfig.ReservedIP}, ip)
+			if err != nil && !kerrors.IsNotFound(err) {
+				return managed.ExternalObservation{}, err
+			}
+			if ip.Status.AtProvider.Address != civoInstance.PublicIP {
+				return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: false}, nil
+			}
+		}
+
 		return managed.ExternalObservation{
 			ResourceExists:   true,
 			ResourceUpToDate: true,
@@ -144,7 +161,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		cr.SetConditions(xpv1.Creating())
 		return managed.ExternalObservation{
 			ResourceExists:   true,
-			ResourceUpToDate: true,
+			ResourceUpToDate: false,
 		}, nil
 	}
 	return managed.ExternalObservation{}, nil
@@ -191,7 +208,50 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.New(errNotCivoInstance)
 	}
 
-	err := e.civoClient.UpdateInstance(cr.Status.AtProvider.ID, cr)
+	civoInstance, err := e.civoClient.GetInstance(cr.Status.AtProvider.ID)
+	if err != nil {
+		return managed.ExternalUpdate{}, err
+	}
+	if civoInstance == nil {
+		return managed.ExternalUpdate{}, nil
+	}
+
+	if civoInstance.Status == civocli.StateActive {
+		ip := &ipv1alpha1.CivoIP{}
+		if cr.Spec.InstanceConfig.ReservedIP != "" {
+			err = e.kube.Get(ctx, types.NamespacedName{Name: cr.Spec.InstanceConfig.ReservedIP}, ip)
+			if err != nil {
+				return managed.ExternalUpdate{}, err
+			}
+			if ip.Status.AtProvider.Address != "" {
+				ip, err := e.civoGoClient.GetIP(ip.Status.AtProvider.ID)
+				if err != nil {
+					return managed.ExternalUpdate{}, err
+				}
+				_, err = e.civoGoClient.AssignIP(ip.ID, civoInstance.ID, "instance", e.civoGoClient.Region)
+				if err != nil {
+					return managed.ExternalUpdate{}, err
+				}
+			} else {
+				return managed.ExternalUpdate{}, fmt.Errorf("IP %s not ready yet", cr.Spec.InstanceConfig.ReservedIP)
+			}
+		} else {
+			ip, err := findIPWithInstanceID(e.civoGoClient, civoInstance.ID)
+			if err != nil {
+				klog.Errorf("Unable to find IP with instance ID, error: %v", err)
+				return managed.ExternalUpdate{}, err
+			}
+			if ip != nil {
+				_, err = e.civoGoClient.UnassignIP(ip.ID, e.civoGoClient.Region)
+				if err != nil {
+					klog.Errorf("Unable to unassign IP, error: %v", err)
+					return managed.ExternalUpdate{}, err
+				}
+			}
+		}
+	}
+
+	err = e.civoClient.UpdateInstance(cr.Status.AtProvider.ID, cr)
 
 	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateInstance)
 }
@@ -203,5 +263,20 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	}
 	cr.SetConditions(xpv1.Deleting())
 	err := e.civoClient.DeleteInstance(cr.Status.AtProvider.ID)
-	return errors.Wrap(err, errDeleteInstance)
+	return err
+}
+
+func findIPWithInstanceID(civo *civogo.Client, instanceID string) (*civogo.IP, error) {
+	ips, err := civo.ListIPs()
+	if err != nil {
+		klog.Errorf("Unable to list IPs, error: %v", err)
+		return nil, err
+	}
+
+	for _, ip := range ips.Items {
+		if ip.AssignedTo.ID == instanceID {
+			return &ip, nil
+		}
+	}
+	return nil, nil
 }
