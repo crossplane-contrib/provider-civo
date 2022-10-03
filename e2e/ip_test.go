@@ -94,11 +94,6 @@ func TestIPUnassign(t *testing.T) {
 	instance, err := getOrCreateInstance("e2e-test-instance", "test-ip")
 	g.Expect(err).ShouldNot(HaveOccurred())
 
-	g.Eventually(func() string {
-		err = e2eTest.tenantClient.Get(context.TODO(), client.ObjectKeyFromObject(ip), ip)
-		return ip.Status.AtProvider.AssignedTo.ID
-	}, "2m", "5s").Should(BeEmpty())
-
 	retry(30, 5*time.Second, func() error {
 		e2eTest.tenantClient.Get(context.TODO(), client.ObjectKey{Name: "e2e-test-instance"}, instance)
 		if instance.Status.AtProvider.ID == "" {
@@ -188,9 +183,8 @@ func assignIP(ip *civoip.CivoIP, instanceID string) (*civoip.CivoIP, error) {
 }
 
 func unassignIP(instance *civoinstance.CivoInstance) (*civoinstance.CivoInstance, error) {
-
 	instance.Spec.InstanceConfig.ReservedIP = ""
-	err := e2eTest.tenantClient.Status().Update(context.TODO(), instance)
+	err := e2eTest.tenantClient.Update(context.TODO(), instance)
 
 	if err != nil {
 		return nil, err
