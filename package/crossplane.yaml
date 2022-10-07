@@ -1,11 +1,21 @@
-apiVersion: meta.pkg.crossplane.io/v1alpha1
+apiVersion: meta.pkg.crossplane.io/v1
 kind: Provider
 metadata:
   name: provider-civo
   annotations:
-    descriptionShort: |
-      The Crossplane Civo provider enables management of managing resources on
-      Civo cloud. 
-spec:
-  controller:
-    image: crossplane/provider-civo-controller-amd64:main
+    meta.crossplane.io/maintainer: Crossplane Maintainers <info@crossplane.io>
+    meta.crossplane.io/source: github.com/crossplane-contrib/provider-civo
+    meta.crossplane.io/license: Apache-2.0
+    meta.crossplane.io/description: |
+      The Civo Crossplane provider enables infrastructure management
+      for Civo Cloud.
+    meta.crossplane.io/readme: |
+      `provider-civo` is the Crossplane infrastructure provider for [Civo
+      Cloud](https://www.civo.com/). Available resources and their fields can be
+      found in the [CRD
+      Docs](https://marketplace.upbound.io/providers/civo/provider-civo/latest/crds).
+      If you encounter an issue please reach out on
+      [slack.crossplane.io](https://slack.crossplane.io) and create an issue in
+      the
+      [crossplane/provider-civo](https://github.com/crossplane-contrib/provider-cvio)
+      repo.
