@@ -29,16 +29,30 @@ GO111MODULE = on
 
 # ====================================================================================
 # Setup Kubernetes tools
-KIND_VERSION = v0.11.1
-USE_HELM3 = true
+
+UP_VERSION = v0.13.0
+UP_CHANNEL = stable
 -include build/makelib/k8s_tools.mk
 
 # ====================================================================================
 # Setup Images
 
-DOCKER_REGISTRY = crossplane
-IMAGES = provider-civo provider-civo-controller
--include build/makelib/image.mk
+IMAGES = provider-civo
+-include build/makelib/imagelight.mk
+
+# ====================================================================================
+# Setup XPKG
+
+XPKG_REG_ORGS ?= xpkg.upbound.io/civo
+# NOTE(hasheddan): skip promoting on xpkg.upbound.io as channel tags are
+# inferred.
+XPKG_REG_ORGS_NO_PROMOTE ?= xpkg.upbound.io/civo
+XPKGS = provider-civo
+-include build/makelib/xpkg.mk
+
+# NOTE(hasheddan): we force image building to happen prior to xpkg build so that
+# we ensure image is present in daemon.
+xpkg.build.provider-civo: do.build.images
 
 # ====================================================================================
 # Setup Local Dev
@@ -66,14 +80,6 @@ cobertura:
 		grep -v zz_generated.deepcopy | \
 		$(GOCOVER_COBERTURA) > $(GO_TEST_OUTPUT)/cobertura-coverage.xml
 
-crds.clean:
-	@$(INFO) cleaning generated CRDs
-	@find package/crds -name *.yaml -exec sed -i.sed -e '1,2d' {} \; || $(FAIL)
-	@find package/crds -name *.yaml.sed -delete || $(FAIL)
-	@$(OK) cleaned generated CRDs
-
-generate.done: crds.clean
-
 # integration tests
 e2e.run: test-integration
 
@@ -87,6 +93,20 @@ test-integration: $(KIND) $(KUBECTL) $(HELM3)
 submodules:
 	@git submodule sync
 	@git submodule update --init --recursive
+
+# NOTE(hasheddan): the build submodule currently overrides XDG_CACHE_HOME in
+# order to force the Helm 3 to use the .work/helm directory. This causes Go on
+# Linux machines to use that directory as the build cache as well. We should
+# adjust this behavior in the build submodule because it is also causing Linux
+# users to duplicate their build cache, but for now we just make it easier to
+# identify its location in CI so that we cache between builds.
+go.cachedir:
+	@go env GOCACHE
+
+# NOTE(hasheddan): we must ensure up is installed in tool cache prior to build
+# as including the k8s_tools machinery prior to the xpkg machinery sets UP to
+# point to tool cache.
+build.init: $(UP)
 
 # This is for running out-of-cluster locally, and is for convenience. Running
 # this make target will print out the command which was used. For more control,
