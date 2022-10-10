@@ -8,10 +8,9 @@ metadata:
     meta.crossplane.io/license: Apache-2.0
     meta.crossplane.io/description: |
       The Civo Crossplane provider enables infrastructure management
-      for Civo Cloud.
+      for Civo.
     meta.crossplane.io/readme: |
-      `provider-civo` is the Crossplane infrastructure provider for [Civo
-      Cloud](https://www.civo.com/). Available resources and their fields can be
+      `provider-civo` is the Crossplane infrastructure provider for [Civo](https://www.civo.com/). Available resources and their fields can be
       found in the [CRD
       Docs](https://marketplace.upbound.io/providers/civo/provider-civo/latest/crds).
       If you encounter an issue please reach out on
