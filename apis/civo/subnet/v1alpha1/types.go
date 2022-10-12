@@ -7,8 +7,10 @@ import (
 
 // CivoSubnetConfig specs for the CivoSubnet
 type CivoSubnetConfig struct {
-	Name      string `json:"name"`
-	NetworkID string `json:"networkID"`
+	Name         string `json:"name"`
+	NetworkID    string `json:"networkID"`
+	ResourceType string `json:"resourceType"`
+	ResourceID   string `json:"resourceID"`
 }
 
 // CivoSubnetSpec holds the subnetConfig
@@ -20,11 +22,8 @@ type CivoSubnetSpec struct {
 // CivoSubnetObservation observation fields
 type CivoSubnetObservation struct {
 	ID              string       `json:"id"`
-	Name            string       `json:"name"`
-	NetworkID       string       `json:"networkID"`
 	Status          string       `json:"status"`
 	SubnetSize      string       `json:"subnetSize"`
-	Default         bool         `json:"default"`
 	ObservableField string       `json:"observableField,omitempty"`
 	CreatedAt       *metav1.Time `json:"createdAt,omitempty"`
 }

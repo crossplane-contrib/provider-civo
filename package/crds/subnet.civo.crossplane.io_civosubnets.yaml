@@ -84,9 +84,15 @@ spec:
                     type: string
                   networkID:
                     type: string
+                  resourceID:
+                    type: string
+                  resourceType:
+                    type: string
                 required:
                 - name
                 - networkID
+                - resourceID
+                - resourceType
                 type: object
               writeConnectionSecretToRef:
                 description: WriteConnectionSecretToReference specifies the namespace
@@ -117,13 +123,7 @@ spec:
                   createdAt:
                     format: date-time
                     type: string
-                  default:
-                    type: boolean
                   id:
-                    type: string
-                  name:
-                    type: string
-                  networkID:
                     type: string
                   observableField:
                     type: string
@@ -132,10 +132,7 @@ spec:
                   subnetSize:
                     type: string
                 required:
-                - default
                 - id
-                - name
-                - networkID
                 - status
                 - subnetSize
                 type: object
