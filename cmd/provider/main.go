@@ -33,6 +33,7 @@ import (
 
 	"github.com/crossplane-contrib/provider-civo/apis"
 	civokubernetes "github.com/crossplane-contrib/provider-civo/internal/controller/civokubernetes"
+	civosubnet "github.com/crossplane-contrib/provider-civo/internal/controller/civosubnet"
 	civoprovider "github.com/crossplane-contrib/provider-civo/internal/controller/provider"
 )
 
@@ -81,5 +82,6 @@ func main() {
 	kingpin.FatalIfError(civokubernetes.Setup(mgr, log, rl), "Cannot setup Civo K3 Cluster controllers")
 	kingpin.FatalIfError(civoinstance.Setup(mgr, log, rl), "Cannot setup Civo Instance controllers")
 	kingpin.FatalIfError(civoprovider.Setup(mgr, log, rl), "Cannot setup Provider controllers")
+	kingpin.FatalIfError(civosubnet.Setup(mgr, log, rl), "Cannot setup Subnet controllers")
 	kingpin.FatalIfError(mgr.Start(ctrl.SetupSignalHandler()), "Cannot start controller manager")
 }
