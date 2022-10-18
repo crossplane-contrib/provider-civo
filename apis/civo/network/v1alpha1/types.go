@@ -19,19 +19,26 @@ type CivoNetworkSpec struct {
 
 // CivoNetworkObservation observation fields
 type CivoNetworkObservation struct {
-	ID              string       `json:"id"`
-	CIDR            string       `json:"cidr"`
-	Label           string       `json:"label"`
-	Status          string       `json:"status"`
-	Default         bool         `json:"default"`
-	ObservableField string       `json:"observableField,omitempty"`
-	CreatedAt       *metav1.Time `json:"createdAt,omitempty"`
+	ID              string        `json:"id"`
+	CIDR            string        `json:"cidr"`
+	Label           string        `json:"label"`
+	Status          string        `json:"status"`
+	V6Network       CivoV6Network `json:"v6_network"`
+	Default         bool          `json:"default"`
+	ObservableField string        `json:"observableField,omitempty"`
+	CreatedAt       *metav1.Time  `json:"createdAt,omitempty"`
 }
 
 // CivoNetworkStatus status of the resource
 type CivoNetworkStatus struct {
 	xpv1.ResourceStatus `json:",inline"`
 	AtProvider          CivoNetworkObservation `json:"atProvider,omitempty"`
+}
+
+// CivoV6Network defines the desired state of V6Network
+type CivoV6Network struct {
+	//+default: false
+	Enabled bool `json:"enabled,omitempty"`
 }
 
 // +kubebuilder:object:root=true
