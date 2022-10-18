@@ -154,7 +154,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	if civoSubnet != nil {
 		return managed.ExternalCreation{}, nil
 	}
-	_, err = e.civoClient.CreateNewSubnet(cr.Spec.SubnetConfig.Name)
+	_, err = e.civoClient.CreateSubnet(cr.Spec.SubnetConfig.Name)
 	if err != nil {
 		return managed.ExternalCreation{}, err
 	}
