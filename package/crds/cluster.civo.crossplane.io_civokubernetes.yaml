@@ -87,6 +87,11 @@ spec:
                 type: string
               name:
                 type: string
+              networkId:
+                description: 'NOTE: This can only be set at creation time. Changing
+                  this value after creation will not move the cluster into another
+                  network..'
+                type: string
               pools:
                 items:
                   description: KubernetesClusterPoolConfig is used to create a new
@@ -151,6 +156,7 @@ spec:
             required:
             - connectionDetails
             - name
+            - networkId
             - pools
             type: object
           status:

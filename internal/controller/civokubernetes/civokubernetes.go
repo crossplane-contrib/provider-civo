@@ -8,10 +8,11 @@ import (
 	"github.com/civo/civogo"
 	"github.com/crossplane-contrib/provider-civo/apis/civo/cluster/v1alpha1"
 	v1alpha1provider "github.com/crossplane-contrib/provider-civo/apis/civo/provider/v1alpha1"
-	"github.com/crossplane-contrib/provider-civo/pkg/civocli"
+	"github.com/crossplane-contrib/provider-civo/internal/civoclient"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
@@ -38,7 +39,7 @@ type connecter struct {
 
 type external struct {
 	kube       client.Client
-	civoClient *civocli.CivoClient
+	civoClient *civogo.Client
 }
 
 // Setup sets up a Civo Kubernetes controller.
@@ -84,7 +85,7 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, errors.New("could not find secret")
 	}
 
-	civoClient, err := civocli.NewCivoClient(string(s.Data["credentials"]), providerConfig.Spec.Region)
+	civoClient, err := civoclient.NewAPIClient(string(s.Data["credentials"]), providerConfig.Spec.Region)
 
 	if err != nil {
 		return nil, err
@@ -95,15 +96,15 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	}, nil
 }
 
-//nolint
+// nolint
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	cr, ok := mg.(*v1alpha1.CivoKubernetes)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New("invalid object")
 	}
-	civoCluster, err := e.civoClient.GetK3sCluster(cr.Spec.Name)
+	civoCluster, err := e.civoClient.GetKubernetesCluster(meta.GetExternalName(cr.GetObjectMeta()))
 	if err != nil {
-		return managed.ExternalObservation{ResourceExists: false}, err
+		return managed.ExternalObservation{}, nil
 	}
 	if civoCluster == nil {
 		return managed.ExternalObservation{ResourceExists: false}, nil
@@ -170,18 +171,31 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	if !ok {
 		return managed.ExternalCreation{}, errors.New("invalid object")
 	}
-	civoCluster, err := e.civoClient.GetK3sCluster(cr.Spec.Name)
-	if err != nil {
-		return managed.ExternalCreation{}, err
-	}
+	civoCluster, _ := e.civoClient.GetKubernetesCluster(meta.GetExternalName(cr.GetObjectMeta()))
+	// TODO treat error case VS cluster not exists
+	// if err != nil {
+	// 	return managed.ExternalCreation{}, err
+	// }
 	if civoCluster != nil {
 		return managed.ExternalCreation{}, nil
 	}
 	// Create or Update
-	err = e.civoClient.CreateNewK3sCluster(cr.Spec.Name, cr.Spec.Pools, cr.Spec.Applications, cr.Spec.CNIPlugin, cr.Spec.Version)
+	kc := &civogo.KubernetesClusterConfig{
+		Name:              cr.Spec.Name,
+		Pools:             cr.Spec.Pools,
+		Applications:      "",
+		CNIPlugin:         *cr.Spec.CNIPlugin,
+		KubernetesVersion: *cr.Spec.Version,
+		Region:            e.civoClient.Region,
+		NetworkID:         *cr.Spec.NetworkID,
+	}
+	newCluster, err := e.civoClient.NewKubernetesClusters(kc)
 	if err != nil {
+		log.Warn("Cluster creation failed", err)
 		return managed.ExternalCreation{}, err
 	}
+
+	meta.SetExternalName(cr, newCluster.ID)
 
 	cr.SetConditions(xpv1.Creating())
 
@@ -196,7 +210,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New("invalid object")
 	}
-	remoteCivoCluster, err := e.civoClient.GetK3sCluster(desiredCivoCluster.Spec.Name)
+	remoteCivoCluster, err := e.civoClient.GetKubernetesCluster(meta.GetExternalName(desiredCivoCluster.GetObjectMeta()))
 	if err != nil {
 		return managed.ExternalUpdate{}, err
 	}
@@ -216,7 +230,11 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 
 		log.Debug("Pools are not equal")
 		//TODO: Set region in the civo client once to avoid passing the providerConfig
-		if err := e.civoClient.UpdateK3sCluster(desiredCivoCluster, remoteCivoCluster, providerConfig); err != nil {
+		desiredClusterConfig := &civogo.KubernetesClusterConfig{
+			Pools:  desiredCivoCluster.Spec.Pools,
+			Region: e.civoClient.Region, // TODO: Region needs to be on the cluster spec
+		}
+		if _, err := e.civoClient.UpdateKubernetesCluster(meta.GetExternalName(desiredCivoCluster), desiredClusterConfig); err != nil {
 			return managed.ExternalUpdate{}, err
 		}
 	}
@@ -224,7 +242,11 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	if desiredCivoCluster.Spec.Version != nil {
 		if *desiredCivoCluster.Spec.Version > remoteCivoCluster.Version {
 			log.Info("Updating cluster version")
-			if err := e.civoClient.UpdateK3sClusterVersion(desiredCivoCluster, remoteCivoCluster, providerConfig); err != nil {
+			desiredClusterConfig := &civogo.KubernetesClusterConfig{
+				KubernetesVersion: *desiredCivoCluster.Spec.Version,
+				Region:            e.civoClient.Region, // TODO: Region needs to be on the cluster spec
+			}
+			if _, err := e.civoClient.UpdateKubernetesCluster(meta.GetExternalName(desiredCivoCluster), desiredClusterConfig); err != nil {
 				return managed.ExternalUpdate{}, err
 			}
 		}
@@ -238,7 +260,7 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	if !ok {
 		return nil
 	}
-	civoCluster, err := e.civoClient.GetK3sCluster(cr.Spec.Name)
+	civoCluster, err := e.civoClient.GetKubernetesCluster(meta.GetExternalName(cr.GetObjectMeta()))
 	if err != nil {
 		return err
 	}
@@ -262,7 +284,8 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	// ------------------------------------------------
 	cr.Status.Message = deletionMessage
 	cr.SetConditions(xpv1.Deleting())
-	return e.civoClient.DeleteK3sCluster(civoCluster.Name)
+	_, err = e.civoClient.DeleteKubernetesCluster(civoCluster.ID)
+	return err
 }
 
 func arePoolsEqual(desiredCivoCluster *v1alpha1.CivoKubernetes, remoteCivoCluster *civogo.KubernetesCluster) bool {

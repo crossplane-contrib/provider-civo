@@ -48,6 +48,10 @@ type CivoKubernetesSpec struct {
 	// A list of applications to install from civo marketplace.
 	Applications      []string                        `json:"applications,omitempty"`
 	ConnectionDetails CivoKubernetesConnectionDetails `json:"connectionDetails"`
+	// +required
+	// +immutable
+	// NOTE: This can only be set at creation time. Changing this value after creation will not move the cluster into another network..
+	NetworkID *string `json:"networkId"`
 	// +optional
 	// +kubebuilder:validation:Enum=flannel;cilium
 	// +kubebuilder:default=flannel
