@@ -5,10 +5,11 @@ import (
 )
 
 const (
+	// APIURL is the default Civo API URL
 	APIURL = "https://api.civo.com"
 )
 
-// CivoAPIClient returns a civogo client using the current default API key
-func NewAPIClient(APIKey, region string) (*civogo.Client, error) {
-	return civogo.NewClientWithURL(APIKey, APIURL, region)
+// NewAPIClient returns a civogo client using the current default API key
+func NewAPIClient(apiKey, region string) (*civogo.Client, error) {
+	return civogo.NewClientWithURL(apiKey, APIURL, region)
 }

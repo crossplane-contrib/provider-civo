@@ -173,8 +173,8 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	}
 
 	// at the first call, this id will be the cluster name; civo should return 404
-	existingClusterId := meta.GetExternalName(cr.GetObjectMeta())
-	civoCluster, err := e.civoClient.GetKubernetesCluster(existingClusterId)
+	existingClusterID := meta.GetExternalName(cr.GetObjectMeta())
+	civoCluster, err := e.civoClient.GetKubernetesCluster(existingClusterID)
 	if err != nil {
 		if civogo.DatabaseKubernetesClusterNotFoundError.Is(err) {
 			// 404 cluster not found, we continue with the create
@@ -217,8 +217,8 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New("invalid object")
 	}
-	desiredClusterId := meta.GetExternalName(desiredCivoCluster.GetObjectMeta())
-	remoteCivoCluster, err := e.civoClient.GetKubernetesCluster(desiredClusterId)
+	desiredClusterID := meta.GetExternalName(desiredCivoCluster.GetObjectMeta())
+	remoteCivoCluster, err := e.civoClient.GetKubernetesCluster(desiredClusterID)
 	if err != nil {
 		return managed.ExternalUpdate{}, err
 	}
@@ -242,7 +242,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 			Pools:  desiredCivoCluster.Spec.Pools,
 			Region: e.civoClient.Region, // TODO: Region needs to be on the cluster spec
 		}
-		if _, err := e.civoClient.UpdateKubernetesCluster(desiredClusterId, desiredClusterConfig); err != nil {
+		if _, err := e.civoClient.UpdateKubernetesCluster(desiredClusterID, desiredClusterConfig); err != nil {
 			return managed.ExternalUpdate{}, err
 		}
 	}
@@ -254,7 +254,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 				KubernetesVersion: *desiredCivoCluster.Spec.Version,
 				Region:            e.civoClient.Region, // TODO: Region needs to be on the cluster spec
 			}
-			if _, err := e.civoClient.UpdateKubernetesCluster(desiredClusterId, desiredClusterConfig); err != nil {
+			if _, err := e.civoClient.UpdateKubernetesCluster(desiredClusterID, desiredClusterConfig); err != nil {
 				return managed.ExternalUpdate{}, err
 			}
 		}
