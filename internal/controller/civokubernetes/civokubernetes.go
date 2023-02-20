@@ -171,11 +171,18 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	if !ok {
 		return managed.ExternalCreation{}, errors.New("invalid object")
 	}
-	civoCluster, _ := e.civoClient.GetKubernetesCluster(meta.GetExternalName(cr.GetObjectMeta()))
-	// TODO treat error case VS cluster not exists
-	// if err != nil {
-	// 	return managed.ExternalCreation{}, err
-	// }
+
+	// at the first call, this id will be the cluster name; civo should return 404
+	existingClusterId := meta.GetExternalName(cr.GetObjectMeta())
+	civoCluster, err := e.civoClient.GetKubernetesCluster(existingClusterId)
+	if err != nil {
+		if civogo.DatabaseKubernetesClusterNotFoundError.Is(err) {
+			// 404 cluster not found, we continue with the create
+		} else {
+			// cluster lookup error, return
+			return managed.ExternalCreation{}, err
+		}
+	}
 	if civoCluster != nil {
 		return managed.ExternalCreation{}, nil
 	}
@@ -210,7 +217,8 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New("invalid object")
 	}
-	remoteCivoCluster, err := e.civoClient.GetKubernetesCluster(meta.GetExternalName(desiredCivoCluster.GetObjectMeta()))
+	desiredClusterId := meta.GetExternalName(desiredCivoCluster.GetObjectMeta())
+	remoteCivoCluster, err := e.civoClient.GetKubernetesCluster(desiredClusterId)
 	if err != nil {
 		return managed.ExternalUpdate{}, err
 	}
@@ -234,7 +242,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 			Pools:  desiredCivoCluster.Spec.Pools,
 			Region: e.civoClient.Region, // TODO: Region needs to be on the cluster spec
 		}
-		if _, err := e.civoClient.UpdateKubernetesCluster(meta.GetExternalName(desiredCivoCluster), desiredClusterConfig); err != nil {
+		if _, err := e.civoClient.UpdateKubernetesCluster(desiredClusterId, desiredClusterConfig); err != nil {
 			return managed.ExternalUpdate{}, err
 		}
 	}
@@ -246,7 +254,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 				KubernetesVersion: *desiredCivoCluster.Spec.Version,
 				Region:            e.civoClient.Region, // TODO: Region needs to be on the cluster spec
 			}
-			if _, err := e.civoClient.UpdateKubernetesCluster(meta.GetExternalName(desiredCivoCluster), desiredClusterConfig); err != nil {
+			if _, err := e.civoClient.UpdateKubernetesCluster(desiredClusterId, desiredClusterConfig); err != nil {
 				return managed.ExternalUpdate{}, err
 			}
 		}
