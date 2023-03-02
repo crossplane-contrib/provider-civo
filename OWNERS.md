@@ -12,3 +12,4 @@ guidelines and responsibilities for the steering committee and maintainers.
 
 * Dinesh Marjekar <dinesh@civo.com> 
 * Harsh Thakur <harsh@civo.com>
+* Alessandro Argentieri <alessandro@civo.com>
