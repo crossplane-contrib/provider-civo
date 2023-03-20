@@ -13,3 +13,19 @@
 
 ## Running the Provider
 - Run `go run cmd/provider/main.go` to start running the local version of the provider
+
+## Testing the provider locally
+
+You can take advantage of a guided script to set up a `crossplane-master` cluster in Civo, deploying the Crossplane civo provider and running the provider locally.
+To init the `crossplane-master` in Civo you can:
+```bash
+./scripts/local.sh init
+```
+To update the provider CRs and deploy it locally:
+```bash
+./scripts/local.sh init
+```
+To show an example you can apply to `crossplane-master` and check if everything is working:
+```bash
+./scripts/local.sh example
+```
