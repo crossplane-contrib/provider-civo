@@ -143,18 +143,23 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 				return managed.ExternalObservation{ResourceExists: true}, err
 			}
 		}
-		// --------------------------------------------
-		_, err = e.Update(ctx, mg)
-		if err != nil {
-			log.Warnf("update error:%s ", err.Error())
-		}
-		// --------------------------------------------
+		// UPDATE CHECK --------------------------------------------
 		cr.SetConditions(xpv1.Available())
+		upToDate, _ := e.ResourceIsUpToDate(ctx, cr, civoCluster)
+
+		if upToDate {
+			cr.Status.Message = "Cluster is up to date"
+		} else {
+			cr.Status.Message = "Cluster is being updated"
+		}
+
 		return managed.ExternalObservation{
 			ResourceExists:    true,
-			ResourceUpToDate:  true,
+			ResourceUpToDate:  upToDate,
 			ConnectionDetails: cd,
 		}, nil
+		// --------------------------------------------
+
 	case "BUILDING":
 		cr.Status.Message = "Cluster is being created"
 		cr.SetConditions(xpv1.Creating())
@@ -228,6 +233,37 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	}, nil
 }
 
+func (e *external) ResourceIsUpToDate(ctx context.Context, mg resource.Managed, remote *civogo.KubernetesCluster) (bool, error) {
+	desired, ok := mg.(*v1alpha1.CivoKubernetes)
+	if !ok {
+		return false, errors.New("invalid object")
+	}
+
+	if len(desired.Spec.Pools) != len(remote.Pools) || !arePoolsEqual(desired, remote) {
+		return false, nil
+	}
+
+	if desired.Spec.Version != nil && *desired.Spec.Version > remote.Version {
+		return false, nil
+	}
+
+	if stringSlicesNeedUpdate(desired.Spec.Tags, remote.Tags) {
+		return false, nil
+	}
+
+	// nolint
+	var remoteAppNames []string
+	for _, app := range remote.InstalledApplications {
+		remoteAppNames = append(remoteAppNames, app.Name)
+	}
+
+	if stringSlicesNeedUpdate(desired.Spec.Applications, remoteAppNames) {
+		return false, nil
+	}
+
+	return true, nil
+}
+
 // nolint
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	desiredCivoCluster, ok := mg.(*v1alpha1.CivoKubernetes)
@@ -299,6 +335,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		}
 	}
 
+	// nolint
 	var remoteAppNames []string
 	for _, app := range remoteCivoCluster.InstalledApplications {
 		remoteAppNames = append(remoteAppNames, app.Name)
