@@ -3,12 +3,12 @@ package civokubernetes
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/civo/civogo"
 	"github.com/crossplane-contrib/provider-civo/apis/civo/cluster/v1alpha1"
 	v1alpha1provider "github.com/crossplane-contrib/provider-civo/apis/civo/provider/v1alpha1"
-	"github.com/crossplane-contrib/provider-civo/internal/civoclient"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
@@ -85,7 +85,7 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, errors.New("could not find secret")
 	}
 
-	civoClient, err := civoclient.NewAPIClient(string(s.Data["credentials"]), providerConfig.Spec.Region)
+	civoClient, err := civogo.NewClient(string(s.Data["credentials"]), providerConfig.Spec.Region)
 
 	if err != nil {
 		return nil, err
@@ -186,15 +186,22 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	if civoCluster != nil {
 		return managed.ExternalCreation{}, nil
 	}
+
+	clusterRegion := cr.Spec.Region
+	if clusterRegion == "" {
+		clusterRegion = e.civoClient.Region
+	}
 	// Create or Update
 	kc := &civogo.KubernetesClusterConfig{
 		Name:              cr.Spec.Name,
 		Pools:             cr.Spec.Pools,
-		Applications:      "",
+		Applications:      strings.Join(cr.Spec.Applications, ","),
 		CNIPlugin:         *cr.Spec.CNIPlugin,
 		KubernetesVersion: *cr.Spec.Version,
-		Region:            e.civoClient.Region,
+		Region:            clusterRegion,
 		NetworkID:         *cr.Spec.NetworkID,
+		InstanceFirewall:  *cr.Spec.FirewallID,
+		Tags:              strings.Join(cr.Spec.Tags, " "),
 	}
 	newCluster, err := e.civoClient.NewKubernetesClusters(kc)
 	if err != nil {
@@ -237,10 +244,9 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	if len(desiredCivoCluster.Spec.Pools) != len(remoteCivoCluster.Pools) || !arePoolsEqual(desiredCivoCluster, remoteCivoCluster) {
 
 		log.Debug("Pools are not equal")
-		//TODO: Set region in the civo client once to avoid passing the providerConfig
 		desiredClusterConfig := &civogo.KubernetesClusterConfig{
 			Pools:  desiredCivoCluster.Spec.Pools,
-			Region: e.civoClient.Region, // TODO: Region needs to be on the cluster spec
+			Region: desiredCivoCluster.Spec.Region,
 		}
 		if _, err := e.civoClient.UpdateKubernetesCluster(desiredClusterID, desiredClusterConfig); err != nil {
 			return managed.ExternalUpdate{}, err
@@ -252,7 +258,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 			log.Info("Updating cluster version")
 			desiredClusterConfig := &civogo.KubernetesClusterConfig{
 				KubernetesVersion: *desiredCivoCluster.Spec.Version,
-				Region:            e.civoClient.Region, // TODO: Region needs to be on the cluster spec
+				Region:            desiredCivoCluster.Spec.Region,
 			}
 			if _, err := e.civoClient.UpdateKubernetesCluster(desiredClusterID, desiredClusterConfig); err != nil {
 				return managed.ExternalUpdate{}, err
@@ -260,7 +266,60 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		}
 	}
 
+	if desiredCivoCluster.Spec.FirewallID != &remoteCivoCluster.FirewallID {
+		desiredClusterConfig := &civogo.KubernetesClusterConfig{
+			InstanceFirewall: *desiredCivoCluster.Spec.FirewallID,
+			Region:           desiredCivoCluster.Spec.Region,
+		}
+		if _, err := e.civoClient.UpdateKubernetesCluster(desiredClusterID, desiredClusterConfig); err != nil {
+			return managed.ExternalUpdate{}, err
+		}
+	}
+
+	if stringSlicesNeedUpdate(desiredCivoCluster.Spec.Tags, remoteCivoCluster.Tags) {
+		desiredClusterConfig := &civogo.KubernetesClusterConfig{
+			Tags:   strings.Join(desiredCivoCluster.Spec.Tags, " "),
+			Region: desiredCivoCluster.Spec.Region,
+		}
+		if _, err := e.civoClient.UpdateKubernetesCluster(desiredClusterID, desiredClusterConfig); err != nil {
+			return managed.ExternalUpdate{}, err
+		}
+	}
+
+	var remoteAppNames []string
+	for _, app := range remoteCivoCluster.InstalledApplications {
+		remoteAppNames = append(remoteAppNames, app.Name)
+	}
+
+	if stringSlicesNeedUpdate(desiredCivoCluster.Spec.Applications, remoteAppNames) {
+		desiredClusterConfig := &civogo.KubernetesClusterConfig{
+			Applications: strings.Join(desiredCivoCluster.Spec.Applications, " "),
+			Region:       desiredCivoCluster.Spec.Region,
+		}
+		if _, err := e.civoClient.UpdateKubernetesCluster(desiredClusterID, desiredClusterConfig); err != nil {
+			return managed.ExternalUpdate{}, err
+		}
+	}
+
 	return managed.ExternalUpdate{}, nil
+}
+
+func stringSlicesNeedUpdate(desired, remote []string) bool {
+	if len(desired) != len(remote) {
+		return true
+	} else if len(desired) == 0 {
+		return false
+	}
+
+	sort.Strings(desired)
+	sort.Strings(remote)
+
+	for i := range desired {
+		if desired[i] != remote[i] {
+			return true
+		}
+	}
+	return false
 }
 
 func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
