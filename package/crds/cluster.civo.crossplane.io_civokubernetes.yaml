@@ -85,6 +85,8 @@ spec:
                 - Orphan
                 - Delete
                 type: string
+              firewallId:
+                type: string
               name:
                 type: string
               networkId:
@@ -127,6 +129,12 @@ spec:
                 required:
                 - name
                 type: object
+              region:
+                type: string
+              tags:
+                items:
+                  type: string
+                type: array
               version:
                 default: 1.22.2-k3s1
                 description: 'If not set, the default kubernetes version(1.22.2-k31)

@@ -191,18 +191,28 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	if clusterRegion == "" {
 		clusterRegion = e.civoClient.Region
 	}
+
 	// Create or Update
 	kc := &civogo.KubernetesClusterConfig{
-		Name:              cr.Spec.Name,
-		Pools:             cr.Spec.Pools,
-		Applications:      strings.Join(cr.Spec.Applications, ","),
-		CNIPlugin:         *cr.Spec.CNIPlugin,
-		KubernetesVersion: *cr.Spec.Version,
-		Region:            clusterRegion,
-		NetworkID:         *cr.Spec.NetworkID,
-		InstanceFirewall:  *cr.Spec.FirewallID,
-		Tags:              strings.Join(cr.Spec.Tags, " "),
+		Name:         cr.Spec.Name,
+		Region:       clusterRegion,
+		NetworkID:    *cr.Spec.NetworkID,
+		Pools:        cr.Spec.Pools,
+		Applications: strings.Join(cr.Spec.Applications, ","),
+		Tags:         strings.Join(cr.Spec.Tags, " "),
 	}
+
+	if cr.Spec.CNIPlugin != nil {
+		kc.CNIPlugin = *cr.Spec.CNIPlugin
+	}
+	if cr.Spec.Version != nil {
+		kc.KubernetesVersion = *cr.Spec.Version
+	}
+
+	if cr.Spec.FirewallID != nil {
+		kc.InstanceFirewall = *cr.Spec.FirewallID
+	}
+
 	newCluster, err := e.civoClient.NewKubernetesClusters(kc)
 	if err != nil {
 		log.Warn("Cluster creation failed", err)
@@ -257,6 +267,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		if *desiredCivoCluster.Spec.Version > remoteCivoCluster.Version {
 			log.Info("Updating cluster version")
 			desiredClusterConfig := &civogo.KubernetesClusterConfig{
+				Name:              desiredCivoCluster.Name,
 				KubernetesVersion: *desiredCivoCluster.Spec.Version,
 				Region:            desiredCivoCluster.Spec.Region,
 			}
@@ -266,8 +277,9 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		}
 	}
 
-	if desiredCivoCluster.Spec.FirewallID != &remoteCivoCluster.FirewallID {
+	if desiredCivoCluster.Spec.FirewallID != nil && desiredCivoCluster.Spec.FirewallID != &remoteCivoCluster.FirewallID {
 		desiredClusterConfig := &civogo.KubernetesClusterConfig{
+			Name:             desiredCivoCluster.Name,
 			InstanceFirewall: *desiredCivoCluster.Spec.FirewallID,
 			Region:           desiredCivoCluster.Spec.Region,
 		}
@@ -278,6 +290,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	if stringSlicesNeedUpdate(desiredCivoCluster.Spec.Tags, remoteCivoCluster.Tags) {
 		desiredClusterConfig := &civogo.KubernetesClusterConfig{
+			Name:   desiredCivoCluster.Name,
 			Tags:   strings.Join(desiredCivoCluster.Spec.Tags, " "),
 			Region: desiredCivoCluster.Spec.Region,
 		}
@@ -293,6 +306,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	if stringSlicesNeedUpdate(desiredCivoCluster.Spec.Applications, remoteAppNames) {
 		desiredClusterConfig := &civogo.KubernetesClusterConfig{
+			Name:         desiredCivoCluster.Name,
 			Applications: strings.Join(desiredCivoCluster.Spec.Applications, " "),
 			Region:       desiredCivoCluster.Spec.Region,
 		}

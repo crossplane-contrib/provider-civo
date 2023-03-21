@@ -1,20 +1,25 @@
 kind: CivoKubernetes
 apiVersion: cluster.civo.crossplane.io/v1alpha1
-metadata: 
+metadata:
   name: test-crossplane
 spec:
   name: test-crossplane
+  region: FRA1
+  networkId: 2b192fd5-7d33-42a9-95a1-faf2d9712871
+  firewallId: 2184b1cd-35bc-4dd7-9405-c7486c3c5141
+  tags:
+    - "test-tag"
   pools:
-    - id: "8382e422-dcdd-461f-afb4-2ab67f171c3e"
+    - id: "pool-small"
       count: 2
       size: g3.k3s.small
-    - id: "8482f422-dcdd-461g-afb4-2ab67f171c3e"
-      count: 1
+    - id: "pool-small-2"
+      count: 2
       size: g3.k3s.small
-  applications: 
+  applications:
     - "argo-cd"
     - "prometheus-operator"
-  version: "1.22.2-k3s1"
+  version: "1.23.6-k3s1"
   connectionDetails:
     connectionSecretNamePrefix: "cluster-details"
     connectionSecretNamespace: "default"

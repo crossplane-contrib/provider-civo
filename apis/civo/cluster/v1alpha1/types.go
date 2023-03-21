@@ -43,7 +43,7 @@ type CivoKubernetesConnectionDetails struct {
 type CivoKubernetesSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
 	Name              string                               `json:"name"`
-	Region            string                               `json:"region"`
+	Region            string                               `json:"region,omitempty"`
 	Pools             []civogo.KubernetesClusterPoolConfig `json:"pools"`
 	// +optional
 	// A list of applications to install from civo marketplace.
@@ -66,7 +66,7 @@ type CivoKubernetesSpec struct {
 	// Changing the version to a higher version will upgrade the cluster. Note that this may cause breaking changes to the Kubernetes API so please check kubernetes deprecations/mitigations before upgrading.
 	Version    *string  `json:"version,omitempty"`
 	Tags       []string `json:"tags,omitempty"`
-	FirewallID *string  `json:"firewallId"`
+	FirewallID *string  `json:"firewallId,omitempty"`
 }
 
 // A CivoKubernetesStatus represents the observed state of a CivoKubernetes.
