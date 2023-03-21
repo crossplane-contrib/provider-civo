@@ -22,8 +22,8 @@ import (
 const testClusterExternalID = "69a23478-a89e-41d2-97b1-6f4c341cee70"
 
 func getFakeClusterv1Alpha1() *v1alpha1.CivoKubernetes {
-	networkId := "fake-network-id"
-	firewallId := "fake-firewall-id"
+	networkID := "fake-network-id"
+	firewallID := "fake-firewall-id"
 	version := "1.22.2-k3s1"
 	cnipluginflannel := "flannel"
 
@@ -39,10 +39,10 @@ func getFakeClusterv1Alpha1() *v1alpha1.CivoKubernetes {
 			ResourceSpec: getFakeResourceSpec(),
 			Name:         "test-cluster",
 			Region:       "LON1",
-			NetworkID:    &networkId,
-			FirewallID:   &firewallId,
+			NetworkID:    &networkID,
+			FirewallID:   &firewallID,
 			Version:      &version,
-			CNIPlugin:    &cnipluginflannel, //required
+			CNIPlugin:    &cnipluginflannel, // required
 			Pools: []civogo.KubernetesClusterPoolConfig{
 				getFakePool(1),
 			},
@@ -122,21 +122,21 @@ func TestUpdate(t *testing.T) {
 				},
 				{
 					URL:         "/v2/kubernetes/clusters/",
-					RequestBody: `{"region":"TEST","instance_firewall":"fake-firewall-id"}`,
+					RequestBody: `{"name":"test-cluster","region":"TEST","instance_firewall":"fake-firewall-id"}`,
 					ResponseBody: fmt.Sprintf(`{
 						"id": "%s"
 					}`, testClusterExternalID),
 				},
 				{
 					URL:         "/v2/kubernetes/clusters/",
-					RequestBody: `{"region":"TEST","tags":"lets-add-a-test-tag"}`,
+					RequestBody: `{"name":"test-cluster","region":"TEST","tags":"lets-add-a-test-tag"}`,
 					ResponseBody: fmt.Sprintf(`{
 						"id": "%s"
 					}`, testClusterExternalID),
 				},
 				{
 					URL:         "/v2/kubernetes/clusters/",
-					RequestBody: `{"region":"TEST","applications":"cilium istio"}`,
+					RequestBody: `{"name":"test-cluster","region":"TEST","applications":"cilium istio"}`,
 					ResponseBody: fmt.Sprintf(`{
 						"id": "%s"
 					}`, testClusterExternalID),
@@ -144,7 +144,7 @@ func TestUpdate(t *testing.T) {
 			},
 		},
 	}
-	civoClient, server, err, results := NewErrorClientForTesting(testCasesConfig)
+	civoClient, server, results, err := NewErrorClientForTesting(testCasesConfig)
 	if err != nil {
 		t.Error(err)
 	}
@@ -227,7 +227,10 @@ func TestCreate(t *testing.T) {
 		},
 	}
 
-	civoClient, server, _, results := NewErrorClientForTesting(testCasesConfig)
+	civoClient, server, results, err := NewErrorClientForTesting(testCasesConfig)
+	if err != nil {
+		t.Error(err)
+	}
 	defer server.Close()
 
 	mockExternal := &external{
@@ -273,15 +276,15 @@ type ValueErrorClientForTesting struct {
 	StatusCode   int
 }
 
-type errorClientResults struct {
+type ErrorClientResults struct {
 	Completed []*http.Request
 	Failed    []*http.Request
 }
 
 // NewAdvancedClientForTesting initializes a Client connecting to a local test server
 // it allows for specifying methods and records and returns all requests made
-func NewErrorClientForTesting(responses []ConfigErrorClientForTesting) (*civogo.Client, *httptest.Server, error, *errorClientResults) {
-	results := &errorClientResults{}
+func NewErrorClientForTesting(responses []ConfigErrorClientForTesting) (*civogo.Client, *httptest.Server, *ErrorClientResults, error) {
+	results := &ErrorClientResults{}
 
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		var responseSent bool
@@ -333,5 +336,5 @@ func NewErrorClientForTesting(responses []ConfigErrorClientForTesting) (*civogo.
 
 	client, err := civogo.NewClientForTestingWithServer(server)
 
-	return client, server, err, results
+	return client, server, results, err
 }
