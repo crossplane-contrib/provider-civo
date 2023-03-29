@@ -55,17 +55,8 @@ spec:
                 - Orphan
                 - Delete
                 type: string
-              networkConfig:
-                description: CivoNetworkConfig specs for the CivoNetwork
-                properties:
-                  label:
-                    type: string
-                  region:
-                    type: string
-                required:
-                - label
-                - region
-                type: object
+              label:
+                type: string
               providerConfigRef:
                 description: ProviderConfigReference specifies how the provider that
                   will be used to create, observe, update, and delete this managed
@@ -106,7 +97,7 @@ spec:
                 - namespace
                 type: object
             required:
-            - networkConfig
+            - label
             type: object
           status:
             description: CivoNetworkStatus status of the resource

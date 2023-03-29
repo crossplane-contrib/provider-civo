@@ -5,16 +5,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// CivoNetworkConfig specs for the CivoNetwork
-type CivoNetworkConfig struct {
-	Label  string `json:"label"`
-	Region string `json:"region"`
-}
-
 // CivoNetworkSpec holds the networkConfig
 type CivoNetworkSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
-	NetworkConfig     CivoNetworkConfig `json:"networkConfig"`
+	Label             string `json:"label"`
 }
 
 // CivoNetworkObservation observation fields

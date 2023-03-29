@@ -161,11 +161,11 @@ func (c *CivoClient) GetInstance(id string) (*civogo.Instance, error) {
 	return instance, nil
 }
 
-// GetNetwork gets a network on Civo.
-func (c *CivoClient) GetNetwork(id string) (*civogo.Network, error) {
-	network, err := c.civoGoClient.GetNetwork(id)
+// FindNetwork gets a network on Civo.
+func (c *CivoClient) FindNetwork(label string) (*civogo.Network, error) {
+	network, err := c.civoGoClient.FindNetwork(label)
 	if err != nil {
-		if strings.Contains(err.Error(), "DatabaseNetworkNotFoundError") {
+		if strings.Contains(err.Error(), "ZeroMatchesError") {
 			return nil, nil
 		}
 		return nil, err
@@ -174,22 +174,23 @@ func (c *CivoClient) GetNetwork(id string) (*civogo.Network, error) {
 }
 
 // CreateNewNetwork creates a new network on Civo.
-func (c *CivoClient) CreateNewNetwork(label string) (*civogo.NetworkResult, error) {
+func (c *CivoClient) CreateNewNetwork(label string) error {
 	network, err := c.civoGoClient.NewNetwork(label)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return network, nil
+	log.Debugf("Created network %s", network.Label)
+	return nil
 }
 
 // UpdateNetwork updates a network on Civo.
-func (c *CivoClient) UpdateNetwork(id string, label string) error {
-	network, err := c.civoGoClient.GetNetwork(id)
+func (c *CivoClient) UpdateNetwork(label string) error {
+	network, err := c.civoGoClient.FindNetwork(label)
 	if err != nil {
 		return err
 	}
 	network.Label = label
-	_, err = c.civoGoClient.RenameNetwork(label, id)
+	_, err = c.civoGoClient.RenameNetwork(network.Label, network.ID)
 	if err != nil {
 		return err
 	}
@@ -204,6 +205,9 @@ func (c *CivoClient) DeleteNetwork(id string) error {
 	}
 	_, err = c.civoGoClient.DeleteNetwork(network.ID)
 	if err != nil {
+		if strings.Contains(err.Error(), "ZeroMatchesError") || strings.Contains(err.Error(), "DatabaseNetworkNotFoundError") {
+			return nil
+		}
 		return err
 	}
 	return nil

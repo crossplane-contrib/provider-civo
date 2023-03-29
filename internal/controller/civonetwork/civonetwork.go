@@ -117,7 +117,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotCivoNetwork)
 	}
-	civoNetwork, err := e.civoClient.GetNetwork(cr.Status.AtProvider.ID)
+	civoNetwork, err := e.civoClient.FindNetwork(cr.Spec.Label)
 	if err != nil {
 		return managed.ExternalObservation{ResourceExists: false}, err
 	}
@@ -147,14 +147,14 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotCivoNetwork)
 	}
-	civoNetwork, err := e.civoClient.GetNetwork(cr.Status.AtProvider.ID)
+	civoNetwork, err := e.civoClient.FindNetwork(cr.Spec.Label)
 	if err != nil {
 		return managed.ExternalCreation{}, err
 	}
 	if civoNetwork != nil {
 		return managed.ExternalCreation{}, nil
 	}
-	_, err = e.civoClient.CreateNewNetwork(cr.Spec.NetworkConfig.Label)
+	err = e.civoClient.CreateNewNetwork(cr.Spec.Label)
 	if err != nil {
 		return managed.ExternalCreation{}, err
 	}
@@ -172,7 +172,12 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.New(errNotCivoNetwork)
 	}
 
-	err := e.civoClient.UpdateNetwork(cr.Status.AtProvider.ID, cr.Spec.NetworkConfig.Label)
+	_, err := e.civoClient.FindNetwork(cr.Spec.Label)
+	if err != nil {
+		return managed.ExternalUpdate{}, err
+	}
+
+	err = e.civoClient.UpdateNetwork(cr.Spec.Label)
 
 	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateNetwork)
 }
@@ -184,5 +189,5 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	}
 	cr.SetConditions(xpv1.Deleting())
 	err := e.civoClient.DeleteNetwork(cr.Status.AtProvider.ID)
-	return errors.Wrap(err, errDeleteNetwork)
+	return err
 }
