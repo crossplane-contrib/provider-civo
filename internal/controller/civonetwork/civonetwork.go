@@ -43,8 +43,9 @@ const (
 )
 
 var (
-	// Status of a network
-	NetworkActive   = "Active"
+	// NetworkActive is the status of the network when it is active
+	NetworkActive = "Active"
+	// NetworkDeleting is the status of the network when it is deleting
 	NetworkDeleting = "Deleting"
 )
 
@@ -63,7 +64,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	name := providerconfig.ControllerName(v1alpha1.CivoNetworkGroupKind)
 
 	o := controller.Options{
-		RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
+		RateLimiter: ratelimiter.NewController(),
 	}
 
 	r := managed.NewReconciler(mgr,

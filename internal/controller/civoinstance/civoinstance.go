@@ -62,7 +62,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	name := providerconfig.ControllerName(v1alpha1.CivoInstancGroupKind)
 
 	o := controller.Options{
-		RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
+		RateLimiter: ratelimiter.NewController(),
 	}
 
 	r := managed.NewReconciler(mgr,

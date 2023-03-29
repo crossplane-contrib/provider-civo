@@ -77,7 +77,7 @@ func main() {
 	})
 	kingpin.FatalIfError(err, "Cannot create controller manager")
 
-	rl := ratelimiter.NewDefaultProviderRateLimiter(ratelimiter.DefaultProviderRPS)
+	rl := ratelimiter.NewGlobal(1)
 	kingpin.FatalIfError(apis.AddToScheme(mgr.GetScheme()), "Cannot add Template APIs to scheme")
 	kingpin.FatalIfError(civokubernetes.Setup(mgr, log, rl), "Cannot setup Civo K3 Cluster controllers")
 	kingpin.FatalIfError(civonetwork.Setup(mgr, log, rl), "Cannot setup Civo Network controllers")
