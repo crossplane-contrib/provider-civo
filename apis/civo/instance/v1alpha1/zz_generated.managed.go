@@ -29,6 +29,11 @@ func (mg *CivoInstance) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
+// GetManagementPolicy of this CivoInstance.
+func (mg *CivoInstance) GetManagementPolicy() xpv1.ManagementPolicy {
+	return mg.Spec.ManagementPolicy
+}
+
 // GetProviderConfigReference of this CivoInstance.
 func (mg *CivoInstance) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
@@ -40,6 +45,11 @@ Deprecated: Use GetProviderConfigReference.
 */
 func (mg *CivoInstance) GetProviderReference() *xpv1.Reference {
 	return mg.Spec.ProviderReference
+}
+
+// GetPublishConnectionDetailsTo of this CivoInstance.
+func (mg *CivoInstance) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionDetailsTo {
+	return mg.Spec.PublishConnectionDetailsTo
 }
 
 // GetWriteConnectionSecretToReference of this CivoInstance.
@@ -57,6 +67,11 @@ func (mg *CivoInstance) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
 }
 
+// SetManagementPolicy of this CivoInstance.
+func (mg *CivoInstance) SetManagementPolicy(r xpv1.ManagementPolicy) {
+	mg.Spec.ManagementPolicy = r
+}
+
 // SetProviderConfigReference of this CivoInstance.
 func (mg *CivoInstance) SetProviderConfigReference(r *xpv1.Reference) {
 	mg.Spec.ProviderConfigReference = r
@@ -68,6 +83,11 @@ Deprecated: Use SetProviderConfigReference.
 */
 func (mg *CivoInstance) SetProviderReference(r *xpv1.Reference) {
 	mg.Spec.ProviderReference = r
+}
+
+// SetPublishConnectionDetailsTo of this CivoInstance.
+func (mg *CivoInstance) SetPublishConnectionDetailsTo(r *xpv1.PublishConnectionDetailsTo) {
+	mg.Spec.PublishConnectionDetailsTo = r
 }
 
 // SetWriteConnectionSecretToReference of this CivoInstance.

@@ -29,6 +29,11 @@ func (mg *CivoKubernetes) GetDeletionPolicy() xpv1.DeletionPolicy {
 	return mg.Spec.DeletionPolicy
 }
 
+// GetManagementPolicy of this CivoKubernetes.
+func (mg *CivoKubernetes) GetManagementPolicy() xpv1.ManagementPolicy {
+	return mg.Spec.ManagementPolicy
+}
+
 // GetProviderConfigReference of this CivoKubernetes.
 func (mg *CivoKubernetes) GetProviderConfigReference() *xpv1.Reference {
 	return mg.Spec.ProviderConfigReference
@@ -40,6 +45,11 @@ Deprecated: Use GetProviderConfigReference.
 */
 func (mg *CivoKubernetes) GetProviderReference() *xpv1.Reference {
 	return mg.Spec.ProviderReference
+}
+
+// GetPublishConnectionDetailsTo of this CivoKubernetes.
+func (mg *CivoKubernetes) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionDetailsTo {
+	return mg.Spec.PublishConnectionDetailsTo
 }
 
 // GetWriteConnectionSecretToReference of this CivoKubernetes.
@@ -57,6 +67,11 @@ func (mg *CivoKubernetes) SetDeletionPolicy(r xpv1.DeletionPolicy) {
 	mg.Spec.DeletionPolicy = r
 }
 
+// SetManagementPolicy of this CivoKubernetes.
+func (mg *CivoKubernetes) SetManagementPolicy(r xpv1.ManagementPolicy) {
+	mg.Spec.ManagementPolicy = r
+}
+
 // SetProviderConfigReference of this CivoKubernetes.
 func (mg *CivoKubernetes) SetProviderConfigReference(r *xpv1.Reference) {
 	mg.Spec.ProviderConfigReference = r
@@ -68,6 +83,11 @@ Deprecated: Use SetProviderConfigReference.
 */
 func (mg *CivoKubernetes) SetProviderReference(r *xpv1.Reference) {
 	mg.Spec.ProviderReference = r
+}
+
+// SetPublishConnectionDetailsTo of this CivoKubernetes.
+func (mg *CivoKubernetes) SetPublishConnectionDetailsTo(r *xpv1.PublishConnectionDetailsTo) {
+	mg.Spec.PublishConnectionDetailsTo = r
 }
 
 // SetWriteConnectionSecretToReference of this CivoKubernetes.
