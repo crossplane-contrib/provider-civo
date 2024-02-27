@@ -1,0 +1,8 @@
+kind: CivoSubnet
+apiVersion: subnet.civo.crossplane.io/v1alpha1
+metadata: 
+  name: test-crossplane
+spec:
+  name: test-crossplane
+  providerConfigRef:
+    name: civo-provider
