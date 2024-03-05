@@ -115,7 +115,10 @@ run: $(KUBECTL) generate
 	@$(INFO) Running Crossplane locally out-of-cluster . . .
 	@$(KUBECTL) apply -f package/crds/ -R
 	go run cmd/provider/main.go -d
-
+localdev: ## Run local development script with specified command
+	./scripts/local.sh $(filter-out $@,$(MAKECMDGOALS))
+%:
+	@:	
 manifests:
 	@$(INFO) Deprecated. Run make generate instead.
 

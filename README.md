@@ -26,7 +26,17 @@ Please use the following to reach members of the community:
 
 provider-civo adheres to the same [Code of Conduct](https://github.com/crossplane/crossplane/blob/master/CODE_OF_CONDUCT.md) as the core Crossplane project.
 
-## Usage
+## Run it locally
+
+In the development phase you can test your changes on the `crossplane-civo-provider` via its facility script:
+```bash
+~ (crossplane-civo-provider) $ make localdev
+```
+By using its subcommand `init` you will get a civo kubernetes cluster up and running in a production region of your choice. This cluster will be hosting the Crossplane CRDs (Custom Resource Definition) for Civo (for example `CivoKubernetes`).
+To generate and install the new CRDs from the `crossplane-civo-provider` codebase you can use the subcommand `update`. 
+Once they're installed, the above command will run the `crossplane-civo-provider` locally in background and will connect to the newly created cluster.
+The `example` subcommand will return an example to connect to the `crossplane-master` cluster and to deploy a `CivoKubernetes` CR.
+This will trigger the creation of another cluster in the destination region you specified.
 
 ### Prerequisites
 

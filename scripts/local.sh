@@ -41,7 +41,7 @@ if [ "$1" == "init" ]; then
    fi
    
    # wait the master cluster to be ready
-   while [ -z "`civo kube ls --region=${source_region} | grep crossplane-master | grep ACTIVE`" ]
+   while [ -z "`civo kube show crossplane-master --region=${source_region} | grep 'Status : ACTIVE'`" ]
    do
       printf "."
       sleep 5
@@ -112,13 +112,14 @@ metadata:
   name: hello-crossplane
 spec:
   name: hello-crossplane
+  version: 1.26.4-k3s1
   pools:
   - id: "8382e422-dcdd-461f-afb4-2ab67f171c3e"
     count: 2
-    size: g3.k3s.small
+    size: g4s.kube.xsmall
   - id: "8482f422-dcdd-461g-afb4-2ab67f171c3e"
     count: 1
-    size: g3.k3s.small
+    size: g4s.kube.small
   connectionDetails:
     connectionSecretNamePrefix: "cluster-details"
     connectionSecretNamespace: "default"
