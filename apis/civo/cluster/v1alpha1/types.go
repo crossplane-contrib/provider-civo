@@ -60,6 +60,8 @@ type CivoKubernetesSpec struct {
 	// If set, the value must be a valid kubernetes version, you can use the following command to get the valid versions: `civo k3s versions`
 	// Changing the version to a higher version will upgrade the cluster. Note that this may cause breaking changes to the Kubernetes API so please check kubernetes deprecations/mitigations before upgrading.
 	Version *string `json:"version,omitempty"`
+	// ProviderReference is the reference for the provider
+	ProviderReference *xpv1.Reference `json:"providerReference,omitempty"`
 }
 
 // A CivoKubernetesStatus represents the observed state of a CivoKubernetes.

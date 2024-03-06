@@ -58,6 +58,8 @@ type SecretReference struct {
 type CivoInstanceSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
 	InstanceConfig    CivoInstanceConfig `json:"instanceConfig"`
+	// ProviderReference is the reference for the provider
+	ProviderReference *xpv1.Reference `json:"providerReference,omitempty"`
 }
 
 // CivoInstanceObservation observation fields
