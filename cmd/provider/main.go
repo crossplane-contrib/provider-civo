@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"github.com/crossplane-contrib/provider-civo/internal/controller/civoobjectstore"
 	"os"
 	"path/filepath"
 
@@ -80,6 +81,7 @@ func main() {
 	kingpin.FatalIfError(apis.AddToScheme(mgr.GetScheme()), "Cannot add Template APIs to scheme")
 	kingpin.FatalIfError(civokubernetes.Setup(mgr, log, rl), "Cannot setup Civo K3 Cluster controllers")
 	kingpin.FatalIfError(civoinstance.Setup(mgr, log, rl), "Cannot setup Civo Instance controllers")
+	kingpin.FatalIfError(civoobjectstore.Setup(mgr, log, rl), "Cannot setup Civo Object Store controllers")
 	kingpin.FatalIfError(civoprovider.Setup(mgr, log, rl), "Cannot setup Provider controllers")
 	kingpin.FatalIfError(mgr.Start(ctrl.SetupSignalHandler()), "Cannot start controller manager")
 }
