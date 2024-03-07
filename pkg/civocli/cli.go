@@ -259,39 +259,3 @@ func (c *CivoClient) DeleteK3sCluster(name string) error {
 	}
 	return err
 }
-
-func (c *CivoClient) GetObjectStore(id string) (*civogo.ObjectStore, error) {
-	objectStore, err := c.civoGoClient.GetObjectStore(id)
-	if err != nil {
-		if strings.Contains(err.Error(), "ZeroMatchesError") {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return objectStore, nil
-}
-
-func (c *CivoClient) CreateObjectStore(name string, size int64, accessKeyID string, region string) (*civogo.ObjectStore, error) {
-	objectStore, err := c.civoGoClient.NewObjectStore(&civogo.CreateObjectStoreRequest{
-		Name:        name,
-		MaxSizeGB:   size,
-		AccessKeyID: accessKeyID,
-		Region:      region,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return objectStore, err
-}
-
-func (c *CivoClient) UpdateObjectStore(id string, size int64) error {
-	_, err := c.civoGoClient.UpdateObjectStore(id, &civogo.UpdateObjectStoreRequest{
-		MaxSizeGB: size,
-	})
-	return err
-}
-
-func (c *CivoClient) DeleteObjectStore(id string) error {
-	_, err := c.civoGoClient.DeleteObjectStore(id)
-	return err
-}
