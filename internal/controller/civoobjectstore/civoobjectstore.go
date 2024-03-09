@@ -31,7 +31,10 @@ const (
 	errDeleteObjectStore  = "cannot delete object store"
 	errUpdateObjectStore  = "cannot update object store"
 	errGetObjectStore     = "cannot get object store"
-	errNoObjectStore      = "cannot find the given object store"
+
+	objectStoreStatusReady    = "ready"
+	objectStoreStatusFailed   = "failed"
+	objectStoreStatusCreating = "creating"
 )
 
 type connector struct {
@@ -54,18 +57,18 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	switch civoObjectStore.Status {
-	case "failed":
+	case objectStoreStatusFailed:
 		cr.SetConditions(xpv1.Unavailable())
 		return managed.ExternalObservation{ResourceExists: false, ResourceUpToDate: false}, fmt.Errorf("ObjectStore creation failed")
 
-	case "creating":
+	case objectStoreStatusCreating:
 		cr.SetConditions(xpv1.Creating())
 		cr.Status.AtProvider.Name = civoObjectStore.Name
 		cr.Status.AtProvider.Size = int64(civoObjectStore.MaxSize)
 		cr.Status.AtProvider.Status = civoObjectStore.Status
 		return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: false}, nil
 
-	case "ready":
+	case objectStoreStatusReady:
 		cr.SetConditions(xpv1.Available())
 		cr.Status.AtProvider.Name = civoObjectStore.Name
 		cr.Status.AtProvider.Size = int64(civoObjectStore.MaxSize)
@@ -159,14 +162,14 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	}, nil
 }
 
-func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
+func (e *external) Create(_ context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	os, ok := mg.(*v1alpha1.CivoObjectStore)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotCivoObjectStore)
 	}
 	_, err := e.civoClient.CreateObjectStore(os.Spec.Name, os.Spec.Size, os.Spec.AccessKey)
 	if err != nil {
-		return managed.ExternalCreation{}, err
+		return managed.ExternalCreation{}, errors.New(errCreateObjectStore)
 	}
 
 	os.SetConditions(xpv1.Creating())
@@ -176,7 +179,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	}, nil
 }
 
-func (e external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
+func (e external) Update(_ context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	os, ok := mg.(*v1alpha1.CivoObjectStore)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotCivoObjectStore)
@@ -184,30 +187,30 @@ func (e external) Update(ctx context.Context, mg resource.Managed) (managed.Exte
 
 	objectStore, err := e.civoClient.GetObjectStoreByName(os.Spec.Name)
 	if err != nil {
-		return managed.ExternalUpdate{}, err
+		return managed.ExternalUpdate{}, errors.New(errGetObjectStore)
 	}
 
 	err = e.civoClient.UpdateObjectStore(objectStore.ID, os.Spec.Size)
 	if err != nil {
-		return managed.ExternalUpdate{}, err
+		return managed.ExternalUpdate{}, errors.New(errUpdateObjectStore)
 	}
 	return managed.ExternalUpdate{}, nil
 }
 
-func (e external) Delete(ctx context.Context, mg resource.Managed) error {
+func (e external) Delete(_ context.Context, mg resource.Managed) error {
 	os, ok := mg.(*v1alpha1.CivoObjectStore)
 	if !ok {
 		errors.New(errNotCivoObjectStore)
 	}
 	objectStore, err := e.civoClient.GetObjectStoreByName(os.Spec.Name)
 	if err != nil {
-		return err
+		errors.New(errGetObjectStore)
 	}
 	os.SetConditions(xpv1.Deleting())
 
 	err = e.civoClient.DeleteObjectStore(objectStore.ID)
 	if err != nil {
-		return err
+		return errors.New(errDeleteObjectStore)
 	}
 
 	return nil

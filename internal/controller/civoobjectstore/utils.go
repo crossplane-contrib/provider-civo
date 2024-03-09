@@ -7,7 +7,7 @@ import (
 )
 
 func connectionDetails(objectStore *civogo.ObjectStore, objectStoreCred *civogo.ObjectStoreCredential) managed.ConnectionDetails {
-	if objectStore.Status == "ready" {
+	if objectStore.Status == objectStoreStatusReady {
 		return managed.ConnectionDetails{
 			xpv1.ResourceCredentialsSecretEndpointKey: []byte(objectStore.BucketURL),
 			"accessKeyID":     []byte(objectStoreCred.AccessKeyID),
