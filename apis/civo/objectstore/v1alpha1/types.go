@@ -74,14 +74,13 @@ type CivoObjectStoreStatus struct {
 }
 
 // +kubebuilder:object:root=true
-
-// A CivoObjectStore is an example API type.
-// +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
-// +kubebuilder:printcolumn:name="MESSAGE",type="string",JSONPath=".status.message"
-// +kubebuilder:printcolumn:name="APPLICATIONS",type="string",JSONPath=".spec.applications"
-// Please replace `PROVIDER-NAME` with your actual provider name, like `aws`, `azure`, `gcp`, `alibaba`
-// +kubebuilder:resource:scope=Cluster,categories={crossplane,managed,civo}
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:shortName="cos"
+// +kubebuilder:printcolumn:name="State",type="string",JSONPath=".status.atProvider.status",description="State of the Bucket"
+// +kubebuilder:printcolumn:name="Bucket",type="string",JSONPath=".spec.name",description="Name of the Bucket which can be used against S3 API"
+// +kubebuilder:printcolumn:name="Size",type="string",JSONPath=".spec.maxSize",description="Size of the Bucket in GB"
+
+// CivoObjectStore is the Schema for the ObjectStore API
 type CivoObjectStore struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

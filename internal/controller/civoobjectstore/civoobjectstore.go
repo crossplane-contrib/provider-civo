@@ -2,13 +2,16 @@ package civoobjectstore
 
 import (
 	"context"
+	"fmt"
 	v1alpha1provider "github.com/crossplane-contrib/provider-civo/apis/civo/provider/v1alpha1"
 	"github.com/crossplane-contrib/provider-civo/pkg/civocli"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/providerconfig"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -28,6 +31,7 @@ const (
 	errDeleteObjectStore  = "cannot delete object store"
 	errUpdateObjectStore  = "cannot update object store"
 	errGetObjectStore     = "cannot get object store"
+	errNoObjectStore      = "cannot find the given object store"
 )
 
 type connector struct {
@@ -40,8 +44,68 @@ type external struct {
 }
 
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
-	//TODO implement me
-	panic("implement me")
+	cr, ok := mg.(*v1alpha1.CivoObjectStore)
+	if !ok {
+		return managed.ExternalObservation{}, errors.New(errNotCivoObjectStore)
+	}
+	civoObjectStore, err := e.civoClient.GetObjectStoreByName(cr.Spec.Name)
+	if err != nil || civoObjectStore == nil {
+		return managed.ExternalObservation{ResourceExists: false}, nil
+	}
+
+	switch civoObjectStore.Status {
+	case "failed":
+		cr.SetConditions(xpv1.Unavailable())
+		return managed.ExternalObservation{ResourceExists: false, ResourceUpToDate: false}, fmt.Errorf("ObjectStore creation failed")
+
+	case "creating":
+		cr.SetConditions(xpv1.Creating())
+		cr.Status.AtProvider.Name = civoObjectStore.Name
+		cr.Status.AtProvider.Size = int64(civoObjectStore.MaxSize)
+		cr.Status.AtProvider.Status = civoObjectStore.Status
+		return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: false}, nil
+
+	case "ready":
+		cr.SetConditions(xpv1.Available())
+		cr.Status.AtProvider.Name = civoObjectStore.Name
+		cr.Status.AtProvider.Size = int64(civoObjectStore.MaxSize)
+		cr.Status.AtProvider.Status = civoObjectStore.Status
+
+		cred := e.civoClient.GetObjectStoreCredential(civoObjectStore.OwnerInfo.CredentialID)
+		if cred == nil {
+			return managed.ExternalObservation{ResourceExists: false}, errors.New("unable to get object store credentials")
+		}
+
+		cd := connectionDetails(civoObjectStore, cred)
+		secretName := fmt.Sprintf("%s-%s", cr.Spec.ConnectionDetails.ConnectionSecretNamePrefix, cr.Name)
+
+		connectionSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      secretName,
+				Namespace: cr.Spec.ConnectionDetails.ConnectionSecretNamespace,
+			},
+			Data: cd,
+		}
+		err = e.kube.Get(ctx, types.NamespacedName{
+			Namespace: cr.Spec.ConnectionDetails.ConnectionSecretNamespace,
+			Name:      secretName,
+		}, connectionSecret)
+		if err != nil {
+			err = e.kube.Create(ctx, connectionSecret, &client.CreateOptions{})
+			if err != nil {
+				return managed.ExternalObservation{ResourceExists: true}, err
+			}
+		}
+		_, err = e.Update(ctx, mg)
+		if err != nil {
+			log.Warnf("update error:%s ", err.Error())
+			return managed.ExternalObservation{ResourceExists: true}, err
+		}
+		return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: true}, nil
+
+	}
+
+	return managed.ExternalObservation{ResourceExists: false}, nil
 }
 
 func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
@@ -73,7 +137,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 
 	providerConfig := &v1alpha1provider.ProviderConfig{}
 	err := c.client.Get(ctx, types.NamespacedName{
-		Name: objectStore.Spec.Name}, providerConfig)
+		Name: objectStore.Spec.ProviderConfigReference.Name}, providerConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -95,93 +159,21 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	}, nil
 }
 
-//func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
-//	cr, ok := mg.(*v1alpha1.CivoObjectStore)
-//	if !ok {
-//		return managed.ExternalObservation{}, errors.New(errNotCivoObjectStore)
-//	}
-//	civoObjectStore := FindObjectStore(e.civoGoClient, cr.Spec.Name)
-//	if civoObjectStore == nil {
-//		return managed.ExternalObservation{ResourceExists: false}, nil
-//	}
-//
-//	switch civoObjectStore.Status {
-//	case "ready":
-//		cr.Status.AtProvider.BucketURL = civoObjectStore.BucketURL
-//		cr.Status.AtProvider.ID = civoObjectStore.ID
-//		cr.Status.AtProvider.Name = civoObjectStore.Name
-//		cr.Status.AtProvider.Status = civoObjectStore.Status
-//		cr.Status.AtProvider.MaxSize = civoObjectStore.MaxSize
-//		cred, err := e.civoGoClient.GetObjectStoreCredential(civoObjectStore.OwnerInfo.CredentialID)
-//		if err != nil {
-//			return managed.ExternalObservation{ResourceExists: false}, err
-//		}
-//		cd := connectionDetails(civoObjectStore, cred)
-//		secretName := fmt.Sprintf("%s-%s", cr.Spec.ConnectionDetails.ConnectionSecretNamePrefix, cr.Name)
-//
-//		connectionSecret := &corev1.Secret{
-//			ObjectMeta: metav1.ObjectMeta{
-//				Name:      secretName,
-//				Namespace: cr.Spec.ConnectionDetails.ConnectionSecretNamespace,
-//			},
-//			Data: cd,
-//		}
-//		err = e.kube.Get(ctx, types.NamespacedName{
-//			Namespace: cr.Spec.ConnectionDetails.ConnectionSecretNamespace,
-//			Name:      secretName,
-//		}, connectionSecret)
-//		if err != nil {
-//			err = e.kube.Create(ctx, connectionSecret, &client.CreateOptions{})
-//			if err != nil {
-//				return managed.ExternalObservation{ResourceExists: true}, err
-//			}
-//		}
-//		_, err = e.Update(ctx, mg)
-//		if err != nil {
-//			log.Warnf("update error:%s ", err.Error())
-//			return managed.ExternalObservation{ResourceExists: true}, err
-//		}
-//		cr.SetConditions(xpv1.Available())
-//		return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: true}, nil
-//
-//	case "creating":
-//		cr.Status.Message = "ObjectStore is being created"
-//		cr.SetConditions(xpv1.Creating())
-//		cr.Status.AtProvider.BucketURL = civoObjectStore.BucketURL
-//		cr.Status.AtProvider.ID = civoObjectStore.ID
-//		cr.Status.AtProvider.Name = civoObjectStore.Name
-//		cr.Status.AtProvider.Status = civoObjectStore.Status
-//		cr.Status.AtProvider.MaxSize = civoObjectStore.MaxSize
-//		return managed.ExternalObservation{
-//			ResourceExists:   true,
-//			ResourceUpToDate: false,
-//		}, nil
-//
-//	case "failed":
-//		cr.Status.Message = "ObjectStore creation failed"
-//		cr.SetConditions(xpv1.Unavailable())
-//		return managed.ExternalObservation{
-//			ResourceExists:   true,
-//			ResourceUpToDate: false,
-//		}, fmt.Errorf("ObjectStore creation failed")
-//	}
-//	return managed.ExternalObservation{ResourceExists: false}, nil
-//}
-
 func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	os, ok := mg.(*v1alpha1.CivoObjectStore)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotCivoObjectStore)
 	}
-	providerConfig := &v1alpha1provider.ProviderConfig{}
-	_, err := e.civoClient.CreateObjectStore(os.Spec.Name, os.Spec.Size, os.Spec.AccessKey, providerConfig.Spec.Region)
+	_, err := e.civoClient.CreateObjectStore(os.Spec.Name, os.Spec.Size, os.Spec.AccessKey)
 	if err != nil {
 		return managed.ExternalCreation{}, err
 	}
 
 	os.SetConditions(xpv1.Creating())
 
-	return managed.ExternalCreation{}, nil // TODO: What to return
+	return managed.ExternalCreation{
+		ExternalNameAssigned: true,
+	}, nil
 }
 
 func (e external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
@@ -190,9 +182,16 @@ func (e external) Update(ctx context.Context, mg resource.Managed) (managed.Exte
 		return managed.ExternalUpdate{}, errors.New(errNotCivoObjectStore)
 	}
 
-	err := e.civoClient.UpdateObjectStore(os.Spec.Name, os.Spec.Size)
+	objectStore, err := e.civoClient.GetObjectStoreByName(os.Spec.Name)
+	if err != nil {
+		return managed.ExternalUpdate{}, err
+	}
 
-	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateObjectStore)
+	err = e.civoClient.UpdateObjectStore(objectStore.ID, os.Spec.Size)
+	if err != nil {
+		return managed.ExternalUpdate{}, err
+	}
+	return managed.ExternalUpdate{}, nil
 }
 
 func (e external) Delete(ctx context.Context, mg resource.Managed) error {
@@ -200,9 +199,16 @@ func (e external) Delete(ctx context.Context, mg resource.Managed) error {
 	if !ok {
 		errors.New(errNotCivoObjectStore)
 	}
+	objectStore, err := e.civoClient.GetObjectStoreByName(os.Spec.Name)
+	if err != nil {
+		return err
+	}
+	os.SetConditions(xpv1.Deleting())
 
-	err := e.civoClient.DeleteObjectStore(os.Spec.Name)
+	err = e.civoClient.DeleteObjectStore(objectStore.ID)
+	if err != nil {
+		return err
+	}
 
-	return errors.Wrap(err, errDeleteObjectStore)
-
+	return nil
 }

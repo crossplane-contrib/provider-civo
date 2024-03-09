@@ -1,0 +1,12 @@
+kind: CivoObjectStore
+apiVersion: objectstore.civo.crossplane.io/v1alpha1
+metadata:
+  name: testing-store
+spec:
+  name: testing-store
+  size: 500
+  connectionDetails:
+    connectionSecretNamePrefix: "bucket-details"
+    connectionSecretNamespace: "default"
+  providerConfigRef:
+    name: civo-provider

@@ -271,12 +271,12 @@ func (c *CivoClient) GetObjectStore(id string) (*civogo.ObjectStore, error) {
 	return objectStore, nil
 }
 
-func (c *CivoClient) CreateObjectStore(name string, size int64, accessKeyID string, region string) (*civogo.ObjectStore, error) {
+func (c *CivoClient) CreateObjectStore(name string, size int64, accessKeyID string) (*civogo.ObjectStore, error) {
 	objectStore, err := c.civoGoClient.NewObjectStore(&civogo.CreateObjectStoreRequest{
 		Name:        name,
 		MaxSizeGB:   size,
 		AccessKeyID: accessKeyID,
-		Region:      region,
+		Region:      c.civoGoClient.Region,
 	})
 	if err != nil {
 		return nil, err
@@ -287,6 +287,7 @@ func (c *CivoClient) CreateObjectStore(name string, size int64, accessKeyID stri
 func (c *CivoClient) UpdateObjectStore(id string, size int64) error {
 	_, err := c.civoGoClient.UpdateObjectStore(id, &civogo.UpdateObjectStoreRequest{
 		MaxSizeGB: size,
+		Region:    c.civoGoClient.Region,
 	})
 	return err
 }
@@ -294,4 +295,26 @@ func (c *CivoClient) UpdateObjectStore(id string, size int64) error {
 func (c *CivoClient) DeleteObjectStore(id string) error {
 	_, err := c.civoGoClient.DeleteObjectStore(id)
 	return err
+}
+
+func (c *CivoClient) GetObjectStoreByName(name string) (*civogo.ObjectStore, error) {
+	allObjectStore, err := c.civoGoClient.ListObjectStores()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, value := range allObjectStore.Items {
+		if value.Name == name {
+			return &value, nil
+		}
+	}
+	return nil, errors.New("No such object store found")
+}
+
+func (c *CivoClient) GetObjectStoreCredential(credentialID string) *civogo.ObjectStoreCredential {
+	cred, err := c.civoGoClient.GetObjectStoreCredential(credentialID)
+	if err != nil {
+		return nil
+	}
+	return cred
 }
