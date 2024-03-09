@@ -260,6 +260,7 @@ func (c *CivoClient) DeleteK3sCluster(name string) error {
 	return err
 }
 
+// GetObjectStore fetches a object store by its ID.
 func (c *CivoClient) GetObjectStore(id string) (*civogo.ObjectStore, error) {
 	objectStore, err := c.civoGoClient.GetObjectStore(id)
 	if err != nil {
@@ -271,6 +272,7 @@ func (c *CivoClient) GetObjectStore(id string) (*civogo.ObjectStore, error) {
 	return objectStore, nil
 }
 
+// CreateObjectStore creates object store.
 func (c *CivoClient) CreateObjectStore(name string, size int64, accessKeyID string) (*civogo.ObjectStore, error) {
 	objectStore, err := c.civoGoClient.NewObjectStore(&civogo.CreateObjectStoreRequest{
 		Name:        name,
@@ -284,6 +286,7 @@ func (c *CivoClient) CreateObjectStore(name string, size int64, accessKeyID stri
 	return objectStore, err
 }
 
+// UpdateObjectStore updates size of object store by its ID.
 func (c *CivoClient) UpdateObjectStore(id string, size int64) error {
 	_, err := c.civoGoClient.UpdateObjectStore(id, &civogo.UpdateObjectStoreRequest{
 		MaxSizeGB: size,
@@ -292,11 +295,13 @@ func (c *CivoClient) UpdateObjectStore(id string, size int64) error {
 	return err
 }
 
+// DeleteObjectStore updates size of object store by its ID.
 func (c *CivoClient) DeleteObjectStore(id string) error {
 	_, err := c.civoGoClient.DeleteObjectStore(id)
 	return err
 }
 
+// GetObjectStoreByName updates size of object store by its name.
 func (c *CivoClient) GetObjectStoreByName(name string) (*civogo.ObjectStore, error) {
 	allObjectStore, err := c.civoGoClient.ListObjectStores()
 	if err != nil {
@@ -311,6 +316,7 @@ func (c *CivoClient) GetObjectStoreByName(name string) (*civogo.ObjectStore, err
 	return nil, errors.New("No such object store found")
 }
 
+// GetObjectStoreCredential fetches credentials of object store.
 func (c *CivoClient) GetObjectStoreCredential(credentialID string) *civogo.ObjectStoreCredential {
 	cred, err := c.civoGoClient.GetObjectStoreCredential(credentialID)
 	if err != nil {

@@ -134,7 +134,7 @@ issues:
         - errcheck
         - dupl
         - gosec
-        - scopelint
+        - exportloopref
         - unparam
     
     # Ease some gocritic warnings on test files.

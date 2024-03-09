@@ -3,6 +3,7 @@ package civoobjectstore
 import (
 	"context"
 	"fmt"
+
 	v1alpha1provider "github.com/crossplane-contrib/provider-civo/apis/civo/provider/v1alpha1"
 	"github.com/crossplane-contrib/provider-civo/pkg/civocli"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
@@ -46,6 +47,7 @@ type external struct {
 	civoClient *civocli.CivoClient
 }
 
+// nolint
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	cr, ok := mg.(*v1alpha1.CivoObjectStore)
 	if !ok {
@@ -53,7 +55,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 	civoObjectStore, err := e.civoClient.GetObjectStoreByName(cr.Spec.Name)
 	if err != nil || civoObjectStore == nil {
-		return managed.ExternalObservation{ResourceExists: false}, nil
+		return managed.ExternalObservation{ResourceExists: false}, nil //nolint
 	}
 
 	switch civoObjectStore.Status {
@@ -111,6 +113,8 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	return managed.ExternalObservation{ResourceExists: false}, nil
 }
 
+// Setup adds a controller that reconciles ProviderConfigs by accounting for
+// their current usage.
 func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	name := providerconfig.ControllerName(v1alpha1.CivoObjectStoreGroupKind)
 
@@ -165,10 +169,13 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 func (e *external) Create(_ context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	os, ok := mg.(*v1alpha1.CivoObjectStore)
 	if !ok {
-		return managed.ExternalCreation{}, errors.New(errNotCivoObjectStore)
+		err := errors.New(errNotCivoObjectStore)
+		log.Warnf("object store error: %s ", err.Error())
+		return managed.ExternalCreation{}, err
 	}
 	_, err := e.civoClient.CreateObjectStore(os.Spec.Name, os.Spec.Size, os.Spec.AccessKey)
 	if err != nil {
+		log.Warnf("object store create error: %s ", err.Error())
 		return managed.ExternalCreation{}, errors.New(errCreateObjectStore)
 	}
 
@@ -182,16 +189,21 @@ func (e *external) Create(_ context.Context, mg resource.Managed) (managed.Exter
 func (e external) Update(_ context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	os, ok := mg.(*v1alpha1.CivoObjectStore)
 	if !ok {
-		return managed.ExternalUpdate{}, errors.New(errNotCivoObjectStore)
+		err := errors.New(errNotCivoObjectStore)
+		log.Warnf("object store error: %s ", err.Error())
+		return managed.ExternalUpdate{}, err
 	}
 
 	objectStore, err := e.civoClient.GetObjectStoreByName(os.Spec.Name)
 	if err != nil {
-		return managed.ExternalUpdate{}, errors.New(errGetObjectStore)
+		err := errors.New(errGetObjectStore)
+		log.Warnf("object store get error: %s ", err.Error())
+		return managed.ExternalUpdate{}, err
 	}
 
 	err = e.civoClient.UpdateObjectStore(objectStore.ID, os.Spec.Size)
 	if err != nil {
+		log.Warnf("object store update error: %s ", err.Error())
 		return managed.ExternalUpdate{}, errors.New(errUpdateObjectStore)
 	}
 	return managed.ExternalUpdate{}, nil
@@ -200,16 +212,21 @@ func (e external) Update(_ context.Context, mg resource.Managed) (managed.Extern
 func (e external) Delete(_ context.Context, mg resource.Managed) error {
 	os, ok := mg.(*v1alpha1.CivoObjectStore)
 	if !ok {
-		errors.New(errNotCivoObjectStore)
+		err := errors.New(errNotCivoObjectStore)
+		log.Warnf("object store error: %s ", err.Error())
+		return err
 	}
 	objectStore, err := e.civoClient.GetObjectStoreByName(os.Spec.Name)
 	if err != nil {
-		errors.New(errGetObjectStore)
+		err := errors.New(errGetObjectStore)
+		log.Warnf("object store get error: %s ", err.Error())
+		return err
 	}
 	os.SetConditions(xpv1.Deleting())
 
 	err = e.civoClient.DeleteObjectStore(objectStore.ID)
 	if err != nil {
+		log.Warnf("object store delete error: %s ", err.Error())
 		return errors.New(errDeleteObjectStore)
 	}
 
