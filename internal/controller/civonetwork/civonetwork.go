@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package civoinstance
+package civonetwork
 
 import (
 	"context"
@@ -19,7 +19,6 @@ import (
 	v1alpha1provider "github.com/crossplane-contrib/provider-civo/apis/civo/provider/v1alpha1"
 	"github.com/crossplane-contrib/provider-civo/pkg/civocli"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -28,7 +27,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
-	"github.com/crossplane-contrib/provider-civo/apis/civo/instance/v1alpha1"
+	"github.com/crossplane-contrib/provider-civo/apis/civo/network/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
@@ -38,13 +37,16 @@ import (
 )
 
 const (
-	errManagedUpdateFailed = "cannot update instance custom resource"
-	errGenObservation      = "cannot generate observation"
-	errNotCivoInstance     = "managed resource is not a CivoInstance"
-	errCreateInstance      = "cannot create instance"
-	errDeleteInstance      = "cannot delete instance"
-	errGetSSHPubKeySecret  = "cannot get ssh public key secret %s"
-	errUpdateInstance      = "cannot update instance"
+	errNotCivoNetwork = "managed resource is not a CivoNetwork"
+	errDeleteNetwork  = "cannot delete network"
+	errUpdateNetwork  = "cannot update network"
+)
+
+var (
+	// NetworkActive is the status of the network when it is active
+	NetworkActive = "Active"
+	// NetworkDeleting is the status of the network when it is deleting
+	NetworkDeleting = "Deleting"
 )
 
 type connecter struct {
@@ -59,36 +61,36 @@ type external struct {
 // Setup adds a controller that reconciles ProviderConfigs by accounting for
 // their current usage.
 func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
-	name := providerconfig.ControllerName(v1alpha1.CivoInstancGroupKind)
+	name := providerconfig.ControllerName(v1alpha1.CivoNetworkGroupKind)
 
 	o := controller.Options{
 		RateLimiter: ratelimiter.NewController(),
 	}
 
 	r := managed.NewReconciler(mgr,
-		resource.ManagedKind(v1alpha1.CivoInstancGroupVersionKind),
+		resource.ManagedKind(v1alpha1.CivoNetworkGroupVersionKind),
 		managed.WithExternalConnecter(&connecter{client: mgr.GetClient()}),
 		managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
-		managed.WithLogger(l.WithValues("civokubernetes", name)),
+		managed.WithLogger(l.WithValues("civonetwork", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		WithOptions(o).
-		For(&v1alpha1.CivoInstance{}).
+		For(&v1alpha1.CivoNetwork{}).
 		Complete(r)
 }
 
 func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
-	instance, ok := mg.(*v1alpha1.CivoInstance)
+	network, ok := mg.(*v1alpha1.CivoNetwork)
 	if !ok {
-		return nil, errors.New(errNotCivoInstance)
+		return nil, errors.New(errNotCivoNetwork)
 	}
 
 	providerConfig := &v1alpha1provider.ProviderConfig{}
 
 	err := c.client.Get(ctx, types.NamespacedName{
-		Name: instance.Spec.ProviderConfigReference.Name}, providerConfig)
+		Name: network.Spec.ProviderConfigReference.Name}, providerConfig)
 
 	if err != nil {
 		return nil, err
@@ -112,96 +114,81 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.E
 }
 
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
-	cr, ok := mg.(*v1alpha1.CivoInstance)
+	cr, ok := mg.(*v1alpha1.CivoNetwork)
 	if !ok {
-		return managed.ExternalObservation{}, errors.New(errNotCivoInstance)
+		return managed.ExternalObservation{}, errors.New(errNotCivoNetwork)
 	}
-	civoInstance, err := e.civoClient.GetInstance(cr.Status.AtProvider.ID)
+	civoNetwork, err := e.civoClient.FindNetwork(cr.Spec.Label)
 	if err != nil {
 		return managed.ExternalObservation{ResourceExists: false}, err
 	}
-	if civoInstance == nil {
+	if civoNetwork == nil {
 		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
 
-	cr.Status.AtProvider, err = civocli.GenerateObservation(civoInstance)
-	if err != nil {
-		return managed.ExternalObservation{}, errors.Wrap(err, errGenObservation)
-	}
-
-	switch civoInstance.Status {
-	case civocli.StateActive:
+	switch civoNetwork.Status {
+	case NetworkActive:
 		cr.SetConditions(xpv1.Available())
 		return managed.ExternalObservation{
 			ResourceExists:   true,
 			ResourceUpToDate: true,
-			ConnectionDetails: managed.ConnectionDetails{
-				xpv1.ResourceCredentialsSecretEndpointKey: []byte(civoInstance.PublicIP),
-				xpv1.ResourceCredentialsSecretPortKey:     []byte("22"),
-			},
 		}, nil
-	case civocli.StateBuilding:
-		cr.SetConditions(xpv1.Creating())
+	case NetworkDeleting:
+		cr.SetConditions(xpv1.Deleting())
 		return managed.ExternalObservation{
 			ResourceExists:   true,
-			ResourceUpToDate: true,
+			ResourceUpToDate: false,
 		}, nil
 	}
 	return managed.ExternalObservation{}, nil
 }
 
 func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	cr, ok := mg.(*v1alpha1.CivoInstance)
+	cr, ok := mg.(*v1alpha1.CivoNetwork)
 	if !ok {
-		return managed.ExternalCreation{}, errors.New(errNotCivoInstance)
+		return managed.ExternalCreation{}, errors.New(errNotCivoNetwork)
 	}
-	cr.Status.SetConditions(xpv1.Creating())
-
-	createInstance := cr.DeepCopy()
-
-	var sshPubKey string
-
-	if createInstance.Spec.InstanceConfig.SSHPubKeyRef != nil {
-		s := &corev1.Secret{}
-		n := types.NamespacedName{Namespace: createInstance.Spec.InstanceConfig.SSHPubKeyRef.Namespace, Name: createInstance.Spec.InstanceConfig.SSHPubKeyRef.Name}
-		if err := e.kube.Get(ctx, n, s); err != nil {
-			return managed.ExternalCreation{}, errors.Wrapf(err, errGetSSHPubKeySecret, n)
-		}
-		sshPubKey = string(s.Data[createInstance.Spec.InstanceConfig.SSHPubKeyRef.Key])
-	}
-
-	instance, err := e.civoClient.CreateNewInstance(createInstance, sshPubKey, cr.Spec.InstanceConfig.DiskImage)
+	civoNetwork, err := e.civoClient.FindNetwork(cr.Spec.Label)
 	if err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCreateInstance)
+		return managed.ExternalCreation{}, err
 	}
-	cr.Status.AtProvider.ID = instance.ID
-	meta.SetExternalName(cr, instance.ID)
-	if err := e.kube.Update(ctx, cr); err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errManagedUpdateFailed)
+	if civoNetwork != nil {
+		return managed.ExternalCreation{}, nil
 	}
-	return managed.ExternalCreation{ConnectionDetails: managed.ConnectionDetails{
-		xpv1.ResourceCredentialsSecretEndpointKey: []byte(instance.PublicIP),
-		xpv1.ResourceCredentialsSecretPortKey:     []byte("22"),
-	}}, nil
+	err = e.civoClient.CreateNewNetwork(cr.Spec.Label)
+	if err != nil {
+		return managed.ExternalCreation{}, err
+	}
+
+	cr.SetConditions(xpv1.Creating())
+
+	return managed.ExternalCreation{
+		ExternalNameAssigned: true,
+	}, nil
 }
 
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	cr, ok := mg.(*v1alpha1.CivoInstance)
+	cr, ok := mg.(*v1alpha1.CivoNetwork)
 	if !ok {
-		return managed.ExternalUpdate{}, errors.New(errNotCivoInstance)
+		return managed.ExternalUpdate{}, errors.New(errNotCivoNetwork)
 	}
 
-	err := e.civoClient.UpdateInstance(cr.Status.AtProvider.ID, cr)
+	_, err := e.civoClient.FindNetwork(cr.Spec.Label)
+	if err != nil {
+		return managed.ExternalUpdate{}, err
+	}
 
-	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateInstance)
+	err = e.civoClient.UpdateNetwork(cr.Spec.Label)
+
+	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateNetwork)
 }
 
 func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1alpha1.CivoInstance)
+	cr, ok := mg.(*v1alpha1.CivoNetwork)
 	if !ok {
-		return errors.New(errNotCivoInstance)
+		return errors.New(errNotCivoNetwork)
 	}
 	cr.SetConditions(xpv1.Deleting())
-	err := e.civoClient.DeleteInstance(cr.Status.AtProvider.ID)
-	return errors.Wrap(err, errDeleteInstance)
+	err := e.civoClient.DeleteNetwork(cr.Status.AtProvider.ID)
+	return err
 }

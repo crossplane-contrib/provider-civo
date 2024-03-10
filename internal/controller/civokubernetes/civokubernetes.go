@@ -46,7 +46,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
 	name := managed.ControllerName(v1alpha1.CivoKubernetesGroupKind)
 
 	o := controller.Options{
-		RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
+		RateLimiter: ratelimiter.NewController(),
 	}
 
 	r := managed.NewReconciler(mgr,
@@ -95,7 +95,7 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	}, nil
 }
 
-//nolint
+// nolint
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	cr, ok := mg.(*v1alpha1.CivoKubernetes)
 	if !ok {

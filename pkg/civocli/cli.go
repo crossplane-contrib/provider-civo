@@ -161,6 +161,58 @@ func (c *CivoClient) GetInstance(id string) (*civogo.Instance, error) {
 	return instance, nil
 }
 
+// FindNetwork gets a network on Civo.
+func (c *CivoClient) FindNetwork(label string) (*civogo.Network, error) {
+	network, err := c.civoGoClient.FindNetwork(label)
+	if err != nil {
+		if strings.Contains(err.Error(), "ZeroMatchesError") {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return network, nil
+}
+
+// CreateNewNetwork creates a new network on Civo.
+func (c *CivoClient) CreateNewNetwork(label string) error {
+	network, err := c.civoGoClient.NewNetwork(label)
+	if err != nil {
+		return err
+	}
+	log.Debugf("Created network %s", network.Label)
+	return nil
+}
+
+// UpdateNetwork updates a network on Civo.
+func (c *CivoClient) UpdateNetwork(label string) error {
+	network, err := c.civoGoClient.FindNetwork(label)
+	if err != nil {
+		return err
+	}
+	network.Label = label
+	_, err = c.civoGoClient.RenameNetwork(network.Label, network.ID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// DeleteNetwork deletes a network on Civo.
+func (c *CivoClient) DeleteNetwork(id string) error {
+	network, err := c.civoGoClient.GetNetwork(id)
+	if err != nil {
+		return err
+	}
+	_, err = c.civoGoClient.DeleteNetwork(network.ID)
+	if err != nil {
+		if strings.Contains(err.Error(), "ZeroMatchesError") || strings.Contains(err.Error(), "DatabaseNetworkNotFoundError") {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
 // GetK3sCluster gets a K3s cluster on Civo.
 func (c *CivoClient) GetK3sCluster(clusterName string) (*civogo.KubernetesCluster, error) {
 

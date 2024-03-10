@@ -5,18 +5,18 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
-  name: civoinstances.instance.civo.crossplane.io
+  name: civonetworks.network.civo.crossplane.io
 spec:
-  group: instance.civo.crossplane.io
+  group: network.civo.crossplane.io
   names:
     categories:
     - crossplane
     - managed
     - civo
-    kind: CivoInstance
-    listKind: CivoInstanceList
-    plural: civoinstances
-    singular: civoinstance
+    kind: CivoNetwork
+    listKind: CivoNetworkList
+    plural: civonetworks
+    singular: civonetwork
   scope: Cluster
   versions:
   - additionalPrinterColumns:
@@ -29,7 +29,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A CivoInstance is an example API type. Please replace `PROVIDER-NAME`
+        description: A CivoNetwork is an example API type. Please replace `PROVIDER-NAME`
           with your actual provider name, like `aws`, `azure`, `gcp`, `alibaba`
         properties:
           apiVersion:
@@ -45,7 +45,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CivoInstanceSpec holds the instanceConfig
+            description: CivoNetworkSpec holds the networkConfig
             properties:
               deletionPolicy:
                 default: Delete
@@ -60,47 +60,8 @@ spec:
                 - Orphan
                 - Delete
                 type: string
-              instanceConfig:
-                description: CivoInstanceConfig specs for the CivoInstance
-                properties:
-                  diskImage:
-                    type: string
-                  hostname:
-                    type: string
-                  initialUser:
-                    type: string
-                  notes:
-                    type: string
-                  publicIPRequired:
-                    type: string
-                  region:
-                    type: string
-                  script:
-                    type: string
-                  size:
-                    type: string
-                  sshPubKeyRef:
-                    description: SecretReference location of the SSH Public Key Secret
-                    properties:
-                      key:
-                        description: Key whose value will be used.
-                        type: string
-                      name:
-                        description: Name of the secret.
-                        type: string
-                      namespace:
-                        description: Namespace of the secret.
-                        type: string
-                    required:
-                    - key
-                    - name
-                    - namespace
-                    type: object
-                  tags:
-                    items:
-                      type: string
-                    type: array
-                type: object
+              label:
+                type: string
               managementPolicy:
                 default: FullControl
                 description: 'THIS IS AN ALPHA FIELD. Do not use it in production.
@@ -285,27 +246,35 @@ spec:
                 - namespace
                 type: object
             required:
-            - instanceConfig
+            - label
             type: object
           status:
-            description: CivoInstanceStatus status of the resource
+            description: CivoNetworkStatus status of the resource
             properties:
               atProvider:
-                description: CivoInstanceObservation observation fields
+                description: CivoNetworkObservation observation fields
                 properties:
+                  cidr:
+                    type: string
                   createdAt:
                     format: date-time
                     type: string
+                  default:
+                    type: boolean
                   id:
                     type: string
-                  ipv4:
+                  label:
                     type: string
                   observableField:
                     type: string
-                  state:
+                  status:
                     type: string
                 required:
+                - cidr
+                - default
                 - id
+                - label
+                - status
                 type: object
               conditions:
                 description: Conditions of the resource.
