@@ -115,7 +115,8 @@ spec:
                   type: string
                 type: array
               name:
-                description: User Given name to the Object Store
+                description: Name for object store(aka bucket). Name  needs to be
+                  unique across the entire region
                 type: string
               providerConfigRef:
                 default:
@@ -235,8 +236,8 @@ spec:
                 type: object
               size:
                 default: 500
-                description: Size of object store, should be specified in GB
-                format: int64
+                description: Total size of object store, should be specified in GB
+                  and should be multiple of 500
                 type: integer
               writeConnectionSecretToRef:
                 description: |-
@@ -275,7 +276,7 @@ spec:
                     description: User Given name to the Object Store
                     type: string
                   Size:
-                    description: Size of object store
+                    description: Total size of object store
                     format: int64
                     type: integer
                   region:

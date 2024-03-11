@@ -28,8 +28,8 @@ type CivoObjectStoreObservation struct {
 	// User Given name to the Object Store
 	Name string `json:"Name"`
 
-	// Size of object store
-	Size int64 `json:"Size"`
+	// Total size of object store
+	MaxSize int64 `json:"Size"`
 
 	// Status of the Object Store (e.g., Creating, Available, Deleting)
 	Status string `json:"status,omitempty"`
@@ -48,15 +48,15 @@ type CivoObjectStoreConnectionDetails struct {
 type CivoObjectStoreSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
 
-	// User Given name to the Object Store
+	// Name for object store(aka bucket). Name  needs to be unique across the entire region
 	// +required
 	// +immutable
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
 
-	// Size of object store, should be specified in GB
+	// Total size of object store, should be specified in GB and should be multiple of 500
 	// +kubebuilder:default:=500
-	Size int `json:"size,omitempty"`
+	MaxSize int `json:"size,omitempty"`
 
 	// Name of the CivoObjectStore access key
 	// if the provided access key is found it'll be the owner

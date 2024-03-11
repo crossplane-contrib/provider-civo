@@ -66,14 +66,14 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	case objectStoreStatusCreating:
 		cr.SetConditions(xpv1.Creating())
 		cr.Status.AtProvider.Name = civoObjectStore.Name
-		cr.Status.AtProvider.Size = int64(civoObjectStore.MaxSize)
+		cr.Status.AtProvider.MaxSize = int64(civoObjectStore.MaxSize)
 		cr.Status.AtProvider.Status = civoObjectStore.Status
 		return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: false}, nil
 
 	case objectStoreStatusReady:
 		cr.SetConditions(xpv1.Available())
 		cr.Status.AtProvider.Name = civoObjectStore.Name
-		cr.Status.AtProvider.Size = int64(civoObjectStore.MaxSize)
+		cr.Status.AtProvider.MaxSize = int64(civoObjectStore.MaxSize)
 		cr.Status.AtProvider.Status = civoObjectStore.Status
 
 		cred := e.civoClient.GetObjectStoreCredential(civoObjectStore.OwnerInfo.CredentialID)
@@ -182,7 +182,7 @@ func (e *external) Create(_ context.Context, mg resource.Managed) (managed.Exter
 		return managed.ExternalCreation{}, nil
 	}
 
-	_, err = e.civoClient.CreateObjectStore(os.Spec.Name, os.Spec.Size, os.Spec.AccessKey)
+	_, err = e.civoClient.CreateObjectStore(os.Spec.Name, os.Spec.MaxSize, os.Spec.AccessKey)
 	if err != nil {
 		log.Warnf("object store create error: %s ", err.Error())
 		return managed.ExternalCreation{}, errors.New(errCreateObjectStore)
@@ -210,11 +210,11 @@ func (e external) Update(_ context.Context, mg resource.Managed) (managed.Extern
 		return managed.ExternalUpdate{}, err
 	}
 
-	if os.Spec.Size == objectStore.MaxSize {
+	if os.Spec.MaxSize == objectStore.MaxSize {
 		return managed.ExternalUpdate{}, nil
 	}
 
-	err = e.civoClient.UpdateObjectStore(objectStore.ID, os.Spec.Size)
+	err = e.civoClient.UpdateObjectStore(objectStore.ID, os.Spec.MaxSize)
 	if err != nil {
 		log.Warnf("object store update error: %s ", err.Error())
 		return managed.ExternalUpdate{}, errors.New(errUpdateObjectStore)
