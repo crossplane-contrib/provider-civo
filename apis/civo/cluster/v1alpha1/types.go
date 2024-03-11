@@ -43,11 +43,16 @@ type CivoKubernetesConnectionDetails struct {
 type CivoKubernetesSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
 	Name              string                               `json:"name"`
+	Region            string                               `json:"region,omitempty"`
 	Pools             []civogo.KubernetesClusterPoolConfig `json:"pools"`
 	// +optional
 	// A list of applications to install from civo marketplace.
 	Applications      []string                        `json:"applications,omitempty"`
 	ConnectionDetails CivoKubernetesConnectionDetails `json:"connectionDetails"`
+	// +required
+	// +immutable
+	// NOTE: This can only be set at creation time. Changing this value after creation will not move the cluster into another network..
+	NetworkID *string `json:"networkId"`
 	// +optional
 	// +kubebuilder:validation:Enum=flannel;cilium
 	// +kubebuilder:default=flannel
@@ -59,7 +64,9 @@ type CivoKubernetesSpec struct {
 	// If not set, the default kubernetes version(1.22.2-k31) will be used.
 	// If set, the value must be a valid kubernetes version, you can use the following command to get the valid versions: `civo k3s versions`
 	// Changing the version to a higher version will upgrade the cluster. Note that this may cause breaking changes to the Kubernetes API so please check kubernetes deprecations/mitigations before upgrading.
-	Version *string `json:"version,omitempty"`
+	Version    *string  `json:"version,omitempty"`
+	Tags       []string `json:"tags,omitempty"`
+	FirewallID *string  `json:"firewallId,omitempty"`
 }
 
 // A CivoKubernetesStatus represents the observed state of a CivoKubernetes.

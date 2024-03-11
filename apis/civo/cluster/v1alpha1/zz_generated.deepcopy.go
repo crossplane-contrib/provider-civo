@@ -145,6 +145,11 @@ func (in *CivoKubernetesSpec) DeepCopyInto(out *CivoKubernetesSpec) {
 		copy(*out, *in)
 	}
 	out.ConnectionDetails = in.ConnectionDetails
+	if in.NetworkID != nil {
+		in, out := &in.NetworkID, &out.NetworkID
+		*out = new(string)
+		**out = **in
+	}
 	if in.CNIPlugin != nil {
 		in, out := &in.CNIPlugin, &out.CNIPlugin
 		*out = new(string)
@@ -152,6 +157,16 @@ func (in *CivoKubernetesSpec) DeepCopyInto(out *CivoKubernetesSpec) {
 	}
 	if in.Version != nil {
 		in, out := &in.Version, &out.Version
+		*out = new(string)
+		**out = **in
+	}
+	if in.Tags != nil {
+		in, out := &in.Tags, &out.Tags
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.FirewallID != nil {
+		in, out := &in.FirewallID, &out.FirewallID
 		*out = new(string)
 		**out = **in
 	}
