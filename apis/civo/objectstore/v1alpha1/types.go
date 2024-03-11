@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Crossplane Authors.
+Copyright 2024 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,14 +25,11 @@ import (
 // CivoObjectStoreObservation are the observable fields of a CivoObjectStore.
 type CivoObjectStoreObservation struct {
 
-	// User Given name to the Object Store
-	Name string `json:"Name"`
-
 	// Total size of object store
 	MaxSize int64 `json:"Size"`
 
-	// Status of the Object Store (e.g., Creating, Available, Deleting)
-	Status string `json:"status,omitempty"`
+	// Status of the Object Store.
+	Status CivoObjectStoreStatus `json:"status,omitempty"`
 
 	// Region where the Object Store is located
 	Region string `json:"region,omitempty"`
@@ -64,13 +61,17 @@ type CivoObjectStoreSpec struct {
 	// +optional
 	AccessKey string `json:"accessKey,omitempty"`
 
+	// ConnectionDetails specifies how the connection information for the object store should be stored.
+	// This includes the necessary details to create a secret that can store sensitive information
+	// such as the access key and secret access key securely.
 	ConnectionDetails CivoObjectStoreConnectionDetails `json:"connectionDetails"`
 }
 
 // A CivoObjectStoreStatus represents the observed state of a CivoObjectStore.
 type CivoObjectStoreStatus struct {
 	xpv1.ResourceStatus `json:",inline"`
-	AtProvider          CivoObjectStoreObservation `json:"atProvider,omitempty"`
+	AtProvider          *CivoObjectStoreObservation `json:"atProvider,omitempty"`
+	Conditions          []metav1.Condition          `json:"conditions"`
 }
 
 // +kubebuilder:object:root=true

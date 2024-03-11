@@ -65,14 +65,12 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 
 	case objectStoreStatusCreating:
 		cr.SetConditions(xpv1.Creating())
-		cr.Status.AtProvider.Name = civoObjectStore.Name
 		cr.Status.AtProvider.MaxSize = int64(civoObjectStore.MaxSize)
 		cr.Status.AtProvider.Status = civoObjectStore.Status
 		return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: false}, nil
 
 	case objectStoreStatusReady:
 		cr.SetConditions(xpv1.Available())
-		cr.Status.AtProvider.Name = civoObjectStore.Name
 		cr.Status.AtProvider.MaxSize = int64(civoObjectStore.MaxSize)
 		cr.Status.AtProvider.Status = civoObjectStore.Status
 
