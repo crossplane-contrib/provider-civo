@@ -210,6 +210,10 @@ func (e external) Update(_ context.Context, mg resource.Managed) (managed.Extern
 		return managed.ExternalUpdate{}, err
 	}
 
+	if os.Spec.Size == objectStore.MaxSize {
+		return managed.ExternalUpdate{}, nil
+	}
+
 	err = e.civoClient.UpdateObjectStore(objectStore.ID, os.Spec.Size)
 	if err != nil {
 		log.Warnf("object store update error: %s ", err.Error())

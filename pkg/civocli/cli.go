@@ -273,10 +273,10 @@ func (c *CivoClient) GetObjectStore(id string) (*civogo.ObjectStore, error) {
 }
 
 // CreateObjectStore creates object store.
-func (c *CivoClient) CreateObjectStore(name string, size int64, accessKeyID string) (*civogo.ObjectStore, error) {
+func (c *CivoClient) CreateObjectStore(name string, size int, accessKeyID string) (*civogo.ObjectStore, error) {
 	objectStore, err := c.civoGoClient.NewObjectStore(&civogo.CreateObjectStoreRequest{
 		Name:        name,
-		MaxSizeGB:   size,
+		MaxSizeGB:   int64(size),
 		AccessKeyID: accessKeyID,
 		Region:      c.civoGoClient.Region,
 	})
@@ -287,9 +287,9 @@ func (c *CivoClient) CreateObjectStore(name string, size int64, accessKeyID stri
 }
 
 // UpdateObjectStore updates size of object store by its ID.
-func (c *CivoClient) UpdateObjectStore(id string, size int64) error {
+func (c *CivoClient) UpdateObjectStore(id string, size int) error {
 	_, err := c.civoGoClient.UpdateObjectStore(id, &civogo.UpdateObjectStoreRequest{
-		MaxSizeGB: size,
+		MaxSizeGB: int64(size),
 		Region:    c.civoGoClient.Region,
 	})
 	return err

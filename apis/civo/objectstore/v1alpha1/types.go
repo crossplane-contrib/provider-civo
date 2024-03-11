@@ -56,7 +56,7 @@ type CivoObjectStoreSpec struct {
 
 	// Size of object store, should be specified in GB
 	// +kubebuilder:default:=500
-	Size int64 `json:"size,omitempty"`
+	Size int `json:"size,omitempty"`
 
 	// Name of the CivoObjectStore access key
 	// if the provided access key is found it'll be the owner
