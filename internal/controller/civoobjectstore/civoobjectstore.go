@@ -173,7 +173,16 @@ func (e *external) Create(_ context.Context, mg resource.Managed) (managed.Exter
 		log.Warnf("object store error: %s ", err.Error())
 		return managed.ExternalCreation{}, err
 	}
-	_, err := e.civoClient.CreateObjectStore(os.Spec.Name, os.Spec.Size, os.Spec.AccessKey)
+	civoObjectStore, err := e.civoClient.GetObjectStoreByName(os.Spec.Name)
+	if err != nil {
+		log.Warnf("object store get error: %s ", err.Error())
+		return managed.ExternalCreation{}, errors.New(errGetObjectStore)
+	}
+	if civoObjectStore != nil {
+		return managed.ExternalCreation{}, nil
+	}
+
+	_, err = e.civoClient.CreateObjectStore(os.Spec.Name, os.Spec.Size, os.Spec.AccessKey)
 	if err != nil {
 		log.Warnf("object store create error: %s ", err.Error())
 		return managed.ExternalCreation{}, errors.New(errCreateObjectStore)
