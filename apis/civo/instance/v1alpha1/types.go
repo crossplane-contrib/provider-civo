@@ -58,6 +58,7 @@ type SecretReference struct {
 type CivoInstanceSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
 	InstanceConfig    CivoInstanceConfig `json:"instanceConfig"`
+	ProviderReference *xpv1.Reference    `json:"providerReference"`
 }
 
 // CivoInstanceObservation observation fields
@@ -89,6 +90,30 @@ type CivoInstance struct {
 
 	Spec   CivoInstanceSpec   `json:"spec"`
 	Status CivoInstanceStatus `json:"status,omitempty"`
+}
+
+// SetManagementPolicies sets up management policies.
+func (in *CivoInstance) SetManagementPolicies(p xpv1.ManagementPolicies) {
+	// TODO implement me
+	panic("implement me")
+}
+
+// GetManagementPolicies gets management policies.
+func (in *CivoInstance) GetManagementPolicies() xpv1.ManagementPolicies {
+	// TODO implement me
+	panic("implement me")
+}
+
+// SetPublishConnectionDetailsTo sets up connection details.
+func (in *CivoInstance) SetPublishConnectionDetailsTo(r *xpv1.PublishConnectionDetailsTo) {
+	// TODO implement me
+	panic("implement me")
+}
+
+// GetPublishConnectionDetailsTo gets publish connection details.
+func (in *CivoInstance) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionDetailsTo {
+	// TODO implement me
+	panic("implement me")
 }
 
 // +kubebuilder:object:root=true

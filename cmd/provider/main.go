@@ -20,6 +20,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+
 	civoinstance "github.com/crossplane-contrib/provider-civo/internal/controller/civoinstance"
 
 	log "github.com/sirupsen/logrus"
@@ -28,12 +31,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/crossplane/crossplane-runtime/pkg/logging"
-	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
-
 	"github.com/crossplane-contrib/provider-civo/apis"
 	civokubernetes "github.com/crossplane-contrib/provider-civo/internal/controller/civokubernetes"
 	civoprovider "github.com/crossplane-contrib/provider-civo/internal/controller/provider"
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
 )
 
 func init() {
@@ -48,10 +49,11 @@ func init() {
 
 func main() {
 	var (
-		app            = kingpin.New(filepath.Base(os.Args[0]), "Template support for Crossplane.").DefaultEnvars()
-		debug          = app.Flag("debug", "Run with debug logging.").Short('d').Bool()
-		syncPeriod     = app.Flag("sync", "Controller manager sync period such as 300ms, 1.5h, or 2h45m").Short('s').Default("1h").Duration()
-		leaderElection = app.Flag("leader-election", "Use leader election for the controller manager.").Short('l').Default("false").OverrideDefaultFromEnvar("LEADER_ELECTION").Bool()
+		app              = kingpin.New(filepath.Base(os.Args[0]), "Template support for Crossplane.").DefaultEnvars()
+		debug            = app.Flag("debug", "Run with debug logging.").Short('d').Bool()
+		syncPeriod       = app.Flag("sync", "Controller manager sync period such as 300ms, 1.5h, or 2h45m").Short('s').Default("1h").Duration()
+		leaderElection   = app.Flag("leader-election", "Use leader election for the controller manager.").Short('l').Default("false").OverrideDefaultFromEnvar("LEADER_ELECTION").Bool()
+		maxReconcileRate = app.Flag("max-reconcile-rate", "The number of concurrent reconciliations that may be running at one time.").Default("100").Int()
 	)
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
@@ -72,14 +74,17 @@ func main() {
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		LeaderElection:   *leaderElection,
 		LeaderElectionID: "crossplane-leader-election-provider-template",
-		SyncPeriod:       syncPeriod,
+		Cache: cache.Options{
+			SyncPeriod: syncPeriod,
+		},
 	})
 	kingpin.FatalIfError(err, "Cannot create controller manager")
 
-	rl := ratelimiter.NewDefaultProviderRateLimiter(ratelimiter.DefaultProviderRPS)
+	rateLimiter := ratelimiter.NewGlobal(*maxReconcileRate)
+
 	kingpin.FatalIfError(apis.AddToScheme(mgr.GetScheme()), "Cannot add Template APIs to scheme")
-	kingpin.FatalIfError(civokubernetes.Setup(mgr, log, rl), "Cannot setup Civo K3 Cluster controllers")
-	kingpin.FatalIfError(civoinstance.Setup(mgr, log, rl), "Cannot setup Civo Instance controllers")
-	kingpin.FatalIfError(civoprovider.Setup(mgr, log, rl), "Cannot setup Provider controllers")
+	kingpin.FatalIfError(civokubernetes.Setup(mgr, log, *rateLimiter), "Cannot setup Civo K3 Cluster controllers")
+	kingpin.FatalIfError(civoinstance.Setup(mgr, log, *rateLimiter), "Cannot setup Civo Instance controllers")
+	kingpin.FatalIfError(civoprovider.Setup(mgr, log, *rateLimiter), "Cannot setup Provider controllers")
 	kingpin.FatalIfError(mgr.Start(ctrl.SetupSignalHandler()), "Cannot start controller manager")
 }

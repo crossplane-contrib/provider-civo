@@ -12,7 +12,6 @@ import (
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
-	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/pkg/errors"
@@ -42,11 +41,11 @@ type external struct {
 }
 
 // Setup sets up a Civo Kubernetes controller.
-func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.RateLimiter) error {
+func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.BucketRateLimiter) error {
 	name := managed.ControllerName(v1alpha1.CivoKubernetesGroupKind)
 
 	o := controller.Options{
-		RateLimiter: ratelimiter.NewDefaultManagedRateLimiter(rl),
+		RateLimiter: &rl,
 	}
 
 	r := managed.NewReconciler(mgr,
@@ -95,7 +94,7 @@ func (c *connecter) Connect(ctx context.Context, mg resource.Managed) (managed.E
 	}, nil
 }
 
-//nolint
+// nolint
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	cr, ok := mg.(*v1alpha1.CivoKubernetes)
 	if !ok {
@@ -185,9 +184,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	cr.SetConditions(xpv1.Creating())
 
-	return managed.ExternalCreation{
-		ExternalNameAssigned: true,
-	}, nil
+	return managed.ExternalCreation{}, nil
 }
 
 // nolint

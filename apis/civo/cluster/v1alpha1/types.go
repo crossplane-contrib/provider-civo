@@ -60,6 +60,9 @@ type CivoKubernetesSpec struct {
 	// If set, the value must be a valid kubernetes version, you can use the following command to get the valid versions: `civo k3s versions`
 	// Changing the version to a higher version will upgrade the cluster. Note that this may cause breaking changes to the Kubernetes API so please check kubernetes deprecations/mitigations before upgrading.
 	Version *string `json:"version,omitempty"`
+
+	ProviderReference *xpv1.Reference `json:"providerReference"`
+	// TODO: Update the examples as well
 }
 
 // A CivoKubernetesStatus represents the observed state of a CivoKubernetes.
@@ -84,6 +87,30 @@ type CivoKubernetes struct {
 
 	Spec   CivoKubernetesSpec   `json:"spec"`
 	Status CivoKubernetesStatus `json:"status,omitempty"`
+}
+
+// SetManagementPolicies sets up management policies.
+func (mg *CivoKubernetes) SetManagementPolicies(p xpv1.ManagementPolicies) {
+	// TODO implement me
+	panic("implement me")
+}
+
+// GetManagementPolicies gets management policies.
+func (mg *CivoKubernetes) GetManagementPolicies() xpv1.ManagementPolicies {
+	// TODO implement me
+	panic("implement me")
+}
+
+// SetPublishConnectionDetailsTo sets up connection details.
+func (mg *CivoKubernetes) SetPublishConnectionDetailsTo(r *xpv1.PublishConnectionDetailsTo) {
+	// TODO implement me
+	panic("implement me")
+}
+
+// GetPublishConnectionDetailsTo gets publish connection details.
+func (mg *CivoKubernetes) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionDetailsTo {
+	// TODO implement me
+	panic("implement me")
 }
 
 // +kubebuilder:object:root=true
