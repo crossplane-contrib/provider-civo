@@ -1,6 +1,6 @@
 module github.com/crossplane-contrib/provider-civo
 
-go 1.18
+go 1.22
 
 require (
 	github.com/civo/civogo v0.2.68
