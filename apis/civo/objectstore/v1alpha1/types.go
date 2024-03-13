@@ -22,6 +22,15 @@ import (
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
+const (
+	ObjectStoreProvisioned ConditionType = "ObjectStoreProvisioned"
+	ObjectStoreFailed      ConditionType = "ObjectStoreFailed"
+	ObjectStoreUpdated     ConditionType = "ObjectStoreUpdated"
+)
+
+// ConditionType is a string type that represents the type of Condition
+type ConditionType string
+
 // CivoObjectStoreObservation are the observable fields of a CivoObjectStore.
 type CivoObjectStoreObservation struct {
 
