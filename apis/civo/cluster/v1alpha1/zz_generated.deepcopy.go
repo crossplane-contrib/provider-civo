@@ -22,6 +22,7 @@ package v1alpha1
 
 import (
 	"github.com/civo/civogo"
+	"github.com/crossplane/crossplane-runtime/apis/common/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -153,6 +154,11 @@ func (in *CivoKubernetesSpec) DeepCopyInto(out *CivoKubernetesSpec) {
 		in, out := &in.Version, &out.Version
 		*out = new(string)
 		**out = **in
+	}
+	if in.ProviderReference != nil {
+		in, out := &in.ProviderReference, &out.ProviderReference
+		*out = new(v1.Reference)
+		(*in).DeepCopyInto(*out)
 	}
 }
 

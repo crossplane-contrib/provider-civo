@@ -90,27 +90,25 @@ type CivoKubernetes struct {
 }
 
 // SetManagementPolicies sets up management policies.
-func (mg *CivoKubernetes) SetManagementPolicies(p xpv1.ManagementPolicies) {
-	// TODO implement me
-	panic("implement me")
-}
+func (mg *CivoKubernetes) SetManagementPolicies(r xpv1.ManagementPolicies) {}
 
 // GetManagementPolicies gets management policies.
 func (mg *CivoKubernetes) GetManagementPolicies() xpv1.ManagementPolicies {
-	// TODO implement me
-	panic("implement me")
+	// Note: Crossplane runtime reconciler should leave handling of
+	// ManagementPolicies to the provider controller. This is a temporary hack
+	// until we remove the ManagementPolicy field from the Provider Kubernetes
+	// Object in favor of the one in the ResourceSpec.
+	return []xpv1.ManagementAction{xpv1.ManagementActionAll}
 }
 
 // SetPublishConnectionDetailsTo sets up connection details.
 func (mg *CivoKubernetes) SetPublishConnectionDetailsTo(r *xpv1.PublishConnectionDetailsTo) {
-	// TODO implement me
-	panic("implement me")
+	mg.Spec.PublishConnectionDetailsTo = r
 }
 
 // GetPublishConnectionDetailsTo gets publish connection details.
 func (mg *CivoKubernetes) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionDetailsTo {
-	// TODO implement me
-	panic("implement me")
+	return mg.Spec.PublishConnectionDetailsTo
 }
 
 // +kubebuilder:object:root=true
