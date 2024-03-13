@@ -69,7 +69,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, rl workqueue.BucketRateLimiter) e
 		resource.ManagedKind(v1alpha1.CivoInstancGroupVersionKind),
 		managed.WithExternalConnecter(&connecter{client: mgr.GetClient()}),
 		managed.WithReferenceResolver(managed.NewAPISimpleReferenceResolver(mgr.GetClient())),
-		//managed.WithLogger(l.WithValues("civokubernetes", name)),
+		managed.WithLogger(l.WithValues("civokubernetes", name)),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
 
 	return ctrl.NewControllerManagedBy(mgr).
