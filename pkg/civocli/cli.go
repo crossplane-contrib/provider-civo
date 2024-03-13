@@ -217,7 +217,7 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string,
 		return err
 	}
 
-	log.Info("Created Kubernetes cluster %s with %d node pools", kubernetesCluster.Name, len(pools))
+	log.Debugf("Created Kubernetes cluster %s with %d node pools", kubernetesCluster.Name, len(pools))
 
 	return nil
 }
