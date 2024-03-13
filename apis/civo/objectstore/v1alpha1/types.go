@@ -25,8 +25,11 @@ import (
 // CivoObjectStoreObservation are the observable fields of a CivoObjectStore.
 type CivoObjectStoreObservation struct {
 
-	// Total size of object store
-	MaxSize int64 `json:"Size"`
+	// Total size of object store.
+	MaxSize int64 `json:"maxSize"`
+
+	// Used Capacity of the bucket.
+	UsedCapacity string `json:"usedCapacity"`
 
 	// Status of the Object Store.
 	Status CivoObjectStoreStatus `json:"status,omitempty"`
@@ -53,7 +56,7 @@ type CivoObjectStoreSpec struct {
 
 	// Total size of object store, should be specified in GB and should be multiple of 500
 	// +kubebuilder:default:=500
-	MaxSize int `json:"size,omitempty"`
+	MaxSize int `json:"maxSize,omitempty"`
 
 	// Name of the CivoObjectStore access key
 	// if the provided access key is found it'll be the owner
