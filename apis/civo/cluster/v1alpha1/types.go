@@ -61,6 +61,7 @@ type CivoKubernetesSpec struct {
 	// Changing the version to a higher version will upgrade the cluster. Note that this may cause breaking changes to the Kubernetes API so please check kubernetes deprecations/mitigations before upgrading.
 	Version *string `json:"version,omitempty"`
 
+	// ProviderReference holds configs (region, API key etc) for the crossplane provider that is being used.
 	ProviderReference *xpv1.Reference `json:"providerReference"`
 	// TODO: Update the examples as well
 }

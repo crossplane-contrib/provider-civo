@@ -58,7 +58,9 @@ type SecretReference struct {
 type CivoInstanceSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
 	InstanceConfig    CivoInstanceConfig `json:"instanceConfig"`
-	ProviderReference *xpv1.Reference    `json:"providerReference"`
+
+	// ProviderReference holds configs (region, API key etc) for the crossplane provider that is being used.
+	ProviderReference *xpv1.Reference `json:"providerReference"`
 }
 
 // CivoInstanceObservation observation fields
