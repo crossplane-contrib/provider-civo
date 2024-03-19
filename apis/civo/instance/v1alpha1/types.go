@@ -58,6 +58,9 @@ type SecretReference struct {
 type CivoInstanceSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
 	InstanceConfig    CivoInstanceConfig `json:"instanceConfig"`
+
+	// ProviderReference holds configs (region, API key etc) for the crossplane provider that is being used.
+	ProviderReference *xpv1.Reference `json:"providerReference"`
 }
 
 // CivoInstanceObservation observation fields
@@ -89,6 +92,28 @@ type CivoInstance struct {
 
 	Spec   CivoInstanceSpec   `json:"spec"`
 	Status CivoInstanceStatus `json:"status,omitempty"`
+}
+
+// SetManagementPolicies sets up management policies.
+func (mg *CivoInstance) SetManagementPolicies(r xpv1.ManagementPolicies) {}
+
+// GetManagementPolicies gets management policies.
+func (mg *CivoInstance) GetManagementPolicies() xpv1.ManagementPolicies {
+	// Note: Crossplane runtime reconciler should leave handling of
+	// ManagementPolicies to the provider controller. This is a temporary hack
+	// until we remove the ManagementPolicy field from the Provider Kubernetes
+	// Object in favor of the one in the ResourceSpec.
+	return []xpv1.ManagementAction{xpv1.ManagementActionAll}
+}
+
+// SetPublishConnectionDetailsTo sets up connection details.
+func (mg *CivoInstance) SetPublishConnectionDetailsTo(r *xpv1.PublishConnectionDetailsTo) {
+	mg.Spec.PublishConnectionDetailsTo = r
+}
+
+// GetPublishConnectionDetailsTo gets publish connection details.
+func (mg *CivoInstance) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionDetailsTo {
+	return mg.Spec.PublishConnectionDetailsTo
 }
 
 // +kubebuilder:object:root=true

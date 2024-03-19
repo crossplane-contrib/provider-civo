@@ -60,6 +60,10 @@ type CivoKubernetesSpec struct {
 	// If set, the value must be a valid kubernetes version, you can use the following command to get the valid versions: `civo k3s versions`
 	// Changing the version to a higher version will upgrade the cluster. Note that this may cause breaking changes to the Kubernetes API so please check kubernetes deprecations/mitigations before upgrading.
 	Version *string `json:"version,omitempty"`
+
+	// ProviderReference holds configs (region, API key etc) for the crossplane provider that is being used.
+	ProviderReference *xpv1.Reference `json:"providerReference"`
+	// TODO: Update the examples as well
 }
 
 // A CivoKubernetesStatus represents the observed state of a CivoKubernetes.
@@ -84,6 +88,28 @@ type CivoKubernetes struct {
 
 	Spec   CivoKubernetesSpec   `json:"spec"`
 	Status CivoKubernetesStatus `json:"status,omitempty"`
+}
+
+// SetManagementPolicies sets up management policies.
+func (mg *CivoKubernetes) SetManagementPolicies(r xpv1.ManagementPolicies) {}
+
+// GetManagementPolicies gets management policies.
+func (mg *CivoKubernetes) GetManagementPolicies() xpv1.ManagementPolicies {
+	// Note: Crossplane runtime reconciler should leave handling of
+	// ManagementPolicies to the provider controller. This is a temporary hack
+	// until we remove the ManagementPolicy field from the Provider Kubernetes
+	// Object in favor of the one in the ResourceSpec.
+	return []xpv1.ManagementAction{xpv1.ManagementActionAll}
+}
+
+// SetPublishConnectionDetailsTo sets up connection details.
+func (mg *CivoKubernetes) SetPublishConnectionDetailsTo(r *xpv1.PublishConnectionDetailsTo) {
+	mg.Spec.PublishConnectionDetailsTo = r
+}
+
+// GetPublishConnectionDetailsTo gets publish connection details.
+func (mg *CivoKubernetes) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionDetailsTo {
+	return mg.Spec.PublishConnectionDetailsTo
 }
 
 // +kubebuilder:object:root=true
