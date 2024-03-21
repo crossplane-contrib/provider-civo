@@ -23,9 +23,8 @@ import (
 )
 
 const (
+	// ObjectStoreProvisioned is the status condition when the object store is provisioned.
 	ObjectStoreProvisioned ConditionType = "ObjectStoreProvisioned"
-	ObjectStoreFailed      ConditionType = "ObjectStoreFailed"
-	ObjectStoreUpdated     ConditionType = "ObjectStoreUpdated"
 )
 
 // ConditionType is a string type that represents the type of Condition
@@ -37,14 +36,8 @@ type CivoObjectStoreObservation struct {
 	// Total size of object store.
 	MaxSize int64 `json:"maxSize"`
 
-	// Used Capacity of the bucket.
-	UsedCapacity string `json:"usedCapacity"`
-
-	// Status of the Object Store.
-	Status CivoObjectStoreStatus `json:"status,omitempty"`
-
-	// Region where the Object Store is located
-	Region string `json:"region,omitempty"`
+	// Used Capacity of the bucket in percentage.
+	UtilisedPercentage string `json:"utilisedPercentage"`
 }
 
 // CivoObjectStoreConnectionDetails is the desired output secret to store connection information
