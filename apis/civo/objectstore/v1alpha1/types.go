@@ -22,22 +22,14 @@ import (
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
-const (
-	// ObjectStoreProvisioned is the status condition when the object store is provisioned.
-	ObjectStoreProvisioned ConditionType = "ObjectStoreProvisioned"
-)
-
-// ConditionType is a string type that represents the type of Condition
-type ConditionType string
-
 // CivoObjectStoreObservation are the observable fields of a CivoObjectStore.
 type CivoObjectStoreObservation struct {
 
-	// Total size of object store.
-	MaxSize int64 `json:"maxSize"`
-
 	// Used Capacity of the bucket in percentage.
 	UtilisedPercentage string `json:"utilisedPercentage"`
+
+	// Details regarding current state of the bucket.
+	Conditions []metav1.Condition `json:"conditions"`
 }
 
 // CivoObjectStoreConnectionDetails is the desired output secret to store connection information
@@ -76,7 +68,6 @@ type CivoObjectStoreSpec struct {
 type CivoObjectStoreStatus struct {
 	xpv1.ResourceStatus `json:",inline"`
 	AtProvider          *CivoObjectStoreObservation `json:"atProvider,omitempty"`
-	Conditions          []metav1.Condition          `json:"conditions"`
 }
 
 // +kubebuilder:object:root=true
