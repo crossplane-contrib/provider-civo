@@ -4,36 +4,35 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
-  name: civokubernetes.cluster.civo.crossplane.io
+  name: civoobjectstores.objectstore.civo.crossplane.io
 spec:
-  group: cluster.civo.crossplane.io
+  group: objectstore.civo.crossplane.io
   names:
-    categories:
-    - crossplane
-    - managed
-    - civo
-    kind: CivoKubernetes
-    listKind: CivoKubernetesList
-    plural: civokubernetes
-    singular: civokubernetes
-  scope: Cluster
+    kind: CivoObjectStore
+    listKind: CivoObjectStoreList
+    plural: civoobjectstores
+    shortNames:
+    - cos
+    singular: civoobjectstore
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.conditions[?(@.type=='Ready')].status
-      name: READY
+    - description: State of the Bucket
+      jsonPath: .status.atProvider.status
+      name: State
       type: string
-    - jsonPath: .status.message
-      name: MESSAGE
+    - description: Name of the Bucket which can be used against S3 API
+      jsonPath: .spec.name
+      name: Bucket
       type: string
-    - jsonPath: .spec.applications
-      name: APPLICATIONS
+    - description: Size of the Bucket in GB
+      jsonPath: .spec.maxSize
+      name: Size
       type: string
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: |-
-          A CivoKubernetes is an example API type.
-          Please replace `PROVIDER-NAME` with your actual provider name, like `aws`, `azure`, `gcp`, `alibaba`
+        description: CivoObjectStore is the Schema for the ObjectStore API
         properties:
           apiVersion:
             description: |-
@@ -53,26 +52,19 @@ spec:
           metadata:
             type: object
           spec:
-            description: A CivoKubernetesSpec defines the desired state of a CivoKubernetes.
+            description: A CivoObjectStoreSpec defines the desired state of a CivoObjectStore.
             properties:
-              applications:
+              accessKey:
                 description: |-
-                  Pools             []civogo.KubernetesClusterPoolConfig `json:"pools"`
-                  A list of applications to install from civo marketplace.
-                items:
-                  type: string
-                type: array
-              cni:
-                default: flannel
-                description: 'NOTE: This can only be set at creation time. Changing
-                  this value after creation will not update the CNI.'
-                enum:
-                - flannel
-                - cilium
+                  Name of the CivoObjectStore access key
+                  if the provided access key is found it'll be the owner
+                  for object store, else a new credential will be created which can be accessed via the location given in connection details
                 type: string
               connectionDetails:
-                description: CivoKubernetesConnectionDetails is the desired output
-                  secret to store connection information
+                description: |-
+                  ConnectionDetails specifies how the connection information for the object store should be stored.
+                  This includes the necessary details to create a secret that can store sensitive information
+                  such as the access key and secret access key securely.
                 properties:
                   connectionSecretNamePrefix:
                     type: string
@@ -123,7 +115,14 @@ spec:
                   - '*'
                   type: string
                 type: array
+              maxSize:
+                default: 500
+                description: Total size of object store, should be specified in GB
+                  and should be multiple of 500
+                type: integer
               name:
+                description: Name for object store(aka bucket). Name  needs to be
+                  unique across the entire region
                 type: string
               providerConfigRef:
                 default:
@@ -276,13 +275,6 @@ spec:
                 required:
                 - name
                 type: object
-              version:
-                default: 1.22.2-k3s1
-                description: |-
-                  If not set, the default kubernetes version(1.22.2-k31) will be used.
-                  If set, the value must be a valid kubernetes version, you can use the following command to get the valid versions: `civo k3s versions`
-                  Changing the version to a higher version will upgrade the cluster. Note that this may cause breaking changes to the Kubernetes API so please check kubernetes deprecations/mitigations before upgrading.
-                type: string
               writeConnectionSecretToRef:
                 description: |-
                   WriteConnectionSecretToReference specifies the namespace and name of a
@@ -310,15 +302,91 @@ spec:
             - providerReference
             type: object
           status:
-            description: A CivoKubernetesStatus represents the observed state of a
-              CivoKubernetes.
+            description: A CivoObjectStoreStatus represents the observed state of
+              a CivoObjectStore.
             properties:
               atProvider:
-                description: CivoKubernetesObservation are the observable fields of
-                  a CivoKubernetes.
+                description: CivoObjectStoreObservation are the observable fields
+                  of a CivoObjectStore.
                 properties:
-                  observableField:
+                  conditions:
+                    description: Details regarding current state of the bucket.
+                    items:
+                      description: "Condition contains details for one aspect of the
+                        current state of this API Resource.\n---\nThis struct is intended
+                        for direct use as an array at the field path .status.conditions.
+                        \ For example,\n\n\n\ttype FooStatus struct{\n\t    // Represents
+                        the observations of a foo's current state.\n\t    // Known
+                        .status.conditions.type are: \"Available\", \"Progressing\",
+                        and \"Degraded\"\n\t    // +patchMergeKey=type\n\t    // +patchStrategy=merge\n\t
+                        \   // +listType=map\n\t    // +listMapKey=type\n\t    Conditions
+                        []metav1.Condition `json:\"conditions,omitempty\" patchStrategy:\"merge\"
+                        patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"`\n\n\n\t
+                        \   // other fields\n\t}"
+                      properties:
+                        lastTransitionTime:
+                          description: |-
+                            lastTransitionTime is the last time the condition transitioned from one status to another.
+                            This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                          format: date-time
+                          type: string
+                        message:
+                          description: |-
+                            message is a human readable message indicating details about the transition.
+                            This may be an empty string.
+                          maxLength: 32768
+                          type: string
+                        observedGeneration:
+                          description: |-
+                            observedGeneration represents the .metadata.generation that the condition was set based upon.
+                            For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                            with respect to the current state of the instance.
+                          format: int64
+                          minimum: 0
+                          type: integer
+                        reason:
+                          description: |-
+                            reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                            Producers of specific condition types may define expected values and meanings for this field,
+                            and whether the values are considered a guaranteed API.
+                            The value should be a CamelCase string.
+                            This field may not be empty.
+                          maxLength: 1024
+                          minLength: 1
+                          pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                          type: string
+                        status:
+                          description: status of the condition, one of True, False,
+                            Unknown.
+                          enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                          type: string
+                        type:
+                          description: |-
+                            type of condition in CamelCase or in foo.example.com/CamelCase.
+                            ---
+                            Many .condition.type values are consistent across resources like Available, but because arbitrary conditions can be
+                            useful (see .node.status.conditions), the ability to deconflict is important.
+                            The regex it matches is (dns1123SubdomainFmt/)?(qualifiedNameFmt)
+                          maxLength: 316
+                          pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                          type: string
+                      required:
+                      - lastTransitionTime
+                      - message
+                      - reason
+                      - status
+                      - type
+                      type: object
+                    type: array
+                  utilisedPercentage:
+                    description: Used Capacity of the bucket in percentage.
                     type: string
+                required:
+                - conditions
+                - utilisedPercentage
                 type: object
               conditions:
                 description: Conditions of the resource.
@@ -359,10 +427,6 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
-              message:
-                type: string
-            required:
-            - message
             type: object
         required:
         - spec

@@ -21,7 +21,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/civo/civogo"
 	"github.com/crossplane/crossplane-runtime/apis/common/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -134,11 +133,6 @@ func (in *CivoKubernetesParameters) DeepCopy() *CivoKubernetesParameters {
 func (in *CivoKubernetesSpec) DeepCopyInto(out *CivoKubernetesSpec) {
 	*out = *in
 	in.ResourceSpec.DeepCopyInto(&out.ResourceSpec)
-	if in.Pools != nil {
-		in, out := &in.Pools, &out.Pools
-		*out = make([]civogo.KubernetesClusterPoolConfig, len(*in))
-		copy(*out, *in)
-	}
 	if in.Applications != nil {
 		in, out := &in.Applications, &out.Applications
 		*out = make([]string, len(*in))

@@ -17,9 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/civo/civogo"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/civo/civogo"
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
@@ -61,7 +61,7 @@ type CivoKubernetesSpec struct {
 	// Changing the version to a higher version will upgrade the cluster. Note that this may cause breaking changes to the Kubernetes API so please check kubernetes deprecations/mitigations before upgrading.
 	Version *string `json:"version,omitempty"`
 
-	// ProviderReference holds configs (region, API key etc) for the crossplane provider that is being used.
+	// ProviderReference holds configs (region, API key etc.) for the crossplane provider that is being used.
 	ProviderReference *xpv1.Reference `json:"providerReference"`
 	// TODO: Update the examples as well
 }
