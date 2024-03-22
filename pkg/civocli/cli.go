@@ -1,11 +1,14 @@
 package civocli
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strconv"
 	"strings"
 
 	"github.com/civo/civogo"
 	providerCivoCluster "github.com/crossplane-contrib/provider-civo/apis/civo/cluster/v1alpha1"
 	"github.com/crossplane-contrib/provider-civo/apis/civo/instance/v1alpha1"
+	v1alpha1objectstore "github.com/crossplane-contrib/provider-civo/apis/civo/objectstore/v1alpha1"
 	v1alpha1provider "github.com/crossplane-contrib/provider-civo/apis/civo/provider/v1alpha1"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -49,6 +52,16 @@ func GenerateObservation(instance *civogo.Instance) (v1alpha1.CivoInstanceObserv
 		}
 	}
 	return observation, nil
+}
+
+// GenerateObjectStoreObservation creates the CivoInstanceObservation from object store infos
+func GenerateObjectStoreObservation(stats *civogo.ObjectStoreStats) (*v1alpha1objectstore.CivoObjectStoreObservation, error) {
+	percentage := stats.SizeKBUtilised * 100 / stats.MaxSizeKB
+	observation := v1alpha1objectstore.CivoObjectStoreObservation{
+		UtilisedPercentage: strconv.FormatInt(percentage, 10),
+		Conditions:         make([]metav1.Condition, 0),
+	}
+	return &observation, nil
 }
 
 // NewCivoClient creates a new Civo client.
@@ -326,4 +339,13 @@ func (c *CivoClient) GetObjectStoreCredential(credentialID string) *civogo.Objec
 		return nil
 	}
 	return cred
+}
+
+// GetObjectStoreStats fetches stats of object store.
+func (c *CivoClient) GetObjectStoreStats(id string) *civogo.ObjectStoreStats {
+	stats, err := c.civoGoClient.GetObjectStoreStats(id)
+	if err != nil {
+		return nil
+	}
+	return stats
 }

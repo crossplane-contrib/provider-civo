@@ -31,6 +31,7 @@ const (
 	errDeleteObjectStore  = "cannot delete object store"
 	errUpdateObjectStore  = "cannot update object store"
 	errGetObjectStore     = "cannot get object store"
+	errGenObservation     = "cannot generate observation"
 
 	objectStoreStatusReady    = "ready"
 	objectStoreStatusFailed   = "failed"
@@ -55,6 +56,12 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	civoObjectStore, err := e.civoClient.GetObjectStoreByName(cr.Spec.Name)
 	if err != nil || civoObjectStore == nil {
 		return managed.ExternalObservation{ResourceExists: false}, nil //nolint
+	}
+
+	stats := e.civoClient.GetObjectStoreStats(civoObjectStore.ID)
+	cr.Status.AtProvider, err = civocli.GenerateObjectStoreObservation(stats)
+	if err != nil {
+		return managed.ExternalObservation{}, errors.Wrap(err, errGenObservation)
 	}
 
 	switch civoObjectStore.Status {
