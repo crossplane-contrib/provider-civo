@@ -56,9 +56,7 @@ spec:
             description: A CivoKubernetesSpec defines the desired state of a CivoKubernetes.
             properties:
               applications:
-                description: |-
-                  Pools             []civogo.KubernetesClusterPoolConfig `json:"pools"`
-                  A list of applications to install from civo marketplace.
+                description: A list of applications to install from civo marketplace.
                 items:
                   type: string
                 type: array
@@ -125,6 +123,60 @@ spec:
                 type: array
               name:
                 type: string
+              pools:
+                items:
+                  description: KubernetesClusterPoolConfig is used to create a new
+                    cluster pool
+                  properties:
+                    count:
+                      type: integer
+                    id:
+                      type: string
+                    labels:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    public_ip_node_pool:
+                      type: boolean
+                    region:
+                      type: string
+                    size:
+                      type: string
+                    taints:
+                      items:
+                        description: |-
+                          The node this Taint is attached to has the "effect" on
+                          any pod that does not tolerate the Taint.
+                        properties:
+                          effect:
+                            description: |-
+                              Required. The effect of the taint on pods
+                              that do not tolerate the taint.
+                              Valid effects are NoSchedule, PreferNoSchedule and NoExecute.
+                            type: string
+                          key:
+                            description: Required. The taint key to be applied to
+                              a node.
+                            type: string
+                          timeAdded:
+                            description: |-
+                              TimeAdded represents the time at which the taint was added.
+                              It is only written for NoExecute taints.
+                            format: date-time
+                            type: string
+                          value:
+                            description: The taint value corresponding to the taint
+                              key.
+                            type: string
+                        required:
+                        - effect
+                        - key
+                        type: object
+                      type: array
+                  required:
+                  - taints
+                  type: object
+                type: array
               providerConfigRef:
                 default:
                   name: default
@@ -165,7 +217,7 @@ spec:
                 - name
                 type: object
               providerReference:
-                description: ProviderReference holds configs (region, API key etc)
+                description: ProviderReference holds configs (region, API key etc.)
                   for the crossplane provider that is being used.
                 properties:
                   name:
@@ -307,6 +359,7 @@ spec:
             required:
             - connectionDetails
             - name
+            - pools
             - providerReference
             type: object
           status:

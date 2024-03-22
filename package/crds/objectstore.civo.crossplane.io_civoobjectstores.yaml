@@ -164,7 +164,7 @@ spec:
                 - name
                 type: object
               providerReference:
-                description: ProviderReference holds configs (region, API key etc)
+                description: ProviderReference holds configs (region, API key etc.)
                   for the crossplane provider that is being used.
                 properties:
                   name:
