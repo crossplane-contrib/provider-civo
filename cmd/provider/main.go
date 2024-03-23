@@ -35,6 +35,7 @@ import (
 	"github.com/crossplane-contrib/provider-civo/internal/controller/civokubernetes"
 	"github.com/crossplane-contrib/provider-civo/internal/controller/civonetwork"
 	civoprovider "github.com/crossplane-contrib/provider-civo/internal/controller/provider"
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
 )
 
 func init() {
