@@ -281,6 +281,8 @@ spec:
                 description: CivoNetworkObservation are the observable fields of a
                   CivoNetwork.
                 properties:
+                  cidr:
+                    type: string
                   conditions:
                     description: Details regarding current state of the bucket.
                     items:
@@ -353,12 +355,33 @@ spec:
                       - type
                       type: object
                     type: array
+                  default:
+                    type: boolean
+                  id:
+                    type: string
+                  ipv4_enabled:
+                    type: boolean
                   label:
                     description: Used Capacity of the bucket in percentage.
                     type: string
+                  name:
+                    type: string
+                  nameservers_v4:
+                    items:
+                      type: string
+                    type: array
+                  status:
+                    type: string
                 required:
+                - cidr
                 - conditions
+                - default
+                - id
+                - ipv4_enabled
                 - label
+                - name
+                - nameservers_v4
+                - status
                 type: object
               conditions:
                 description: Conditions of the resource.

@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"github.com/crossplane-contrib/provider-civo/internal/controller/civonetwork"
 	"os"
 	"path/filepath"
 
@@ -87,5 +88,6 @@ func main() {
 	kingpin.FatalIfError(civokubernetes.Setup(mgr, log, *rateLimiter), "Cannot setup Civo K3 Cluster controllers")
 	kingpin.FatalIfError(civoinstance.Setup(mgr, log, *rateLimiter), "Cannot setup Civo Instance controllers")
 	kingpin.FatalIfError(civoprovider.Setup(mgr, log, *rateLimiter), "Cannot setup Provider controllers")
+	kingpin.FatalIfError(civonetwork.Setup(mgr, log, *rateLimiter), "Cannot setup Civo Network controllers")
 	kingpin.FatalIfError(mgr.Start(ctrl.SetupSignalHandler()), "Cannot start controller manager")
 }

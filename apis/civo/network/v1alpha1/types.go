@@ -21,9 +21,16 @@ import (
 
 // CivoNetworkObservation are the observable fields of a CivoNetwork.
 type CivoNetworkObservation struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Default bool   `json:"default"`
+	CIDR    string `json:"cidr"`
 
 	// Used Capacity of the bucket in percentage.
-	Label string `json:"label"`
+	Label         string   `json:"label"`
+	Status        string   `json:"status"`
+	IPv4Enabled   bool     `json:"ipv4_enabled"`
+	NameServersV4 []string `json:"nameservers_v4"`
 
 	// Details regarding current state of the bucket.
 	Conditions []metav1.Condition `json:"conditions"`
