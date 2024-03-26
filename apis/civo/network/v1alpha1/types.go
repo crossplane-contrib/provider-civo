@@ -31,9 +31,6 @@ type CivoNetworkObservation struct {
 	Status        string   `json:"status"`
 	IPv4Enabled   bool     `json:"ipv4_enabled"`
 	NameServersV4 []string `json:"nameservers_v4"`
-
-	// Details regarding current state of the bucket.
-	//Conditions []metav1.Condition `json:"conditions"`
 }
 
 // CivoNetworkSpec  defines schema for a CivoNetwork resource.
