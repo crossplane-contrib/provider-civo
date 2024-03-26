@@ -33,7 +33,7 @@ type CivoNetworkObservation struct {
 	NameServersV4 []string `json:"nameservers_v4"`
 
 	// Details regarding current state of the bucket.
-	Conditions []metav1.Condition `json:"conditions"`
+	//Conditions []metav1.Condition `json:"conditions"`
 }
 
 // CivoNetworkSpec  defines schema for a CivoNetwork resource.
