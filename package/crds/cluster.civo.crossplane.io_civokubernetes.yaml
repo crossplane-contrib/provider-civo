@@ -125,8 +125,6 @@ spec:
                 type: string
               pools:
                 items:
-                  description: KubernetesClusterPoolConfig is used to create a new
-                    cluster pool
                   properties:
                     count:
                       type: integer

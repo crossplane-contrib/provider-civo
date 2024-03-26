@@ -17,7 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/civo/civogo"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
@@ -42,8 +42,8 @@ type CivoKubernetesConnectionDetails struct {
 // A CivoKubernetesSpec defines the desired state of a CivoKubernetes.
 type CivoKubernetesSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
-	Name              string                               `json:"name"`
-	Pools             []civogo.KubernetesClusterPoolConfig `json:"pools"`
+	Name              string                        `json:"name"`
+	Pools             []KubernetesClusterPoolConfig `json:"pools"`
 	// +optional
 	// A list of applications to install from civo marketplace.
 	Applications      []string                        `json:"applications,omitempty"`
@@ -119,4 +119,14 @@ type CivoKubernetesList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []CivoKubernetes `json:"items"`
+}
+
+type KubernetesClusterPoolConfig struct {
+	Region           string            `json:"region,omitempty"`
+	ID               string            `json:"id,omitempty"`
+	Count            int               `json:"count,omitempty"`
+	Size             string            `json:"size,omitempty"`
+	Labels           map[string]string `json:"labels,omitempty"`
+	Taints           []corev1.Taint    `json:"taints"`
+	PublicIPNodePool bool              `json:"public_ip_node_pool,omitempty"`
 }
