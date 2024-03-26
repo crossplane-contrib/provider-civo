@@ -4,5 +4,9 @@ metadata:
   name: civo-test-network
 spec:
   name: civo-test-network
+  cidr_v4: "192.168.0.0/24"
+  nameservers_v4:
+    - "8.8.8.8"
+    - "8.8.4.4"
   providerReference:
     name: civo-provider

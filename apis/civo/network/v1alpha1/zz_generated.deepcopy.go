@@ -108,6 +108,11 @@ func (in *CivoNetworkObservation) DeepCopy() *CivoNetworkObservation {
 func (in *CivoNetworkSpec) DeepCopyInto(out *CivoNetworkSpec) {
 	*out = *in
 	in.ResourceSpec.DeepCopyInto(&out.ResourceSpec)
+	if in.NameserversV4 != nil {
+		in, out := &in.NameserversV4, &out.NameserversV4
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.ProviderReference != nil {
 		in, out := &in.ProviderReference, &out.ProviderReference
 		*out = new(v1.Reference)

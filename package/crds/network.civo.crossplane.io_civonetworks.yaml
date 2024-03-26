@@ -54,6 +54,10 @@ spec:
           spec:
             description: CivoNetworkSpec  defines schema for a CivoNetwork resource.
             properties:
+              cidr_v4:
+                description: CIDRv4 represents the IPv4 address range in CIDR notation
+                  for the private network.
+                type: string
               deletionPolicy:
                 default: Delete
                 description: |-
@@ -98,6 +102,12 @@ spec:
               name:
                 description: Name for the private network.
                 type: string
+              nameservers_v4:
+                description: NameserversV4 holds a list of IPv4 addresses of DNS servers
+                  for the private network.
+                items:
+                  type: string
+                type: array
               providerConfigRef:
                 default:
                   name: default

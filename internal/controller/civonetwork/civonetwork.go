@@ -155,7 +155,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	if civoNetwork != nil {
 		return managed.ExternalCreation{}, nil
 	}
-	_, err = e.civoClient.CreateNewNetwork(cr.Spec.Name)
+	_, err = e.civoClient.CreateNewNetwork(cr.Spec.Name, cr.Spec.CIDRv4, cr.Spec.NameserversV4)
 	if err != nil {
 		return managed.ExternalCreation{}, err
 	}
@@ -171,7 +171,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.New(errNotCivoNetwork)
 	}
 
-	err := e.civoClient.UpdateNetwork(cr.Status.AtProvider.ID, cr.Spec.Name)
+	err := e.civoClient.UpdateNetwork(cr.Status.AtProvider.ID, cr.Spec.Name, cr.Spec.CIDRv4, cr.Spec.NameserversV4)
 
 	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateNetwork)
 }

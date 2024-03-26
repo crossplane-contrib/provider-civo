@@ -43,6 +43,14 @@ type CivoNetworkSpec struct {
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
 
+	// CIDRv4 represents the IPv4 address range in CIDR notation for the private network.
+	// +optional
+	CIDRv4 string `json:"cidr_v4"`
+
+	// NameserversV4 holds a list of IPv4 addresses of DNS servers for the private network.
+	// +optional
+	NameserversV4 []string `json:"nameservers_v4"`
+
 	// ProviderReference holds configs (region, API key etc.) for the crossplane provider that is being used.
 	ProviderReference *xpv1.Reference `json:"providerReference"`
 }

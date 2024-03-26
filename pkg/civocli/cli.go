@@ -273,8 +273,14 @@ func (c *CivoClient) GetNetwork(id string) (*civogo.Network, error) {
 }
 
 // CreateNewNetwork creates a new network on Civo.
-func (c *CivoClient) CreateNewNetwork(label string) (*civogo.NetworkResult, error) {
-	network, err := c.civoGoClient.NewNetwork(label)
+func (c *CivoClient) CreateNewNetwork(label string, cidrv4 string, nameserversv4 []string) (*civogo.NetworkResult, error) {
+	configs := civogo.NetworkConfig{
+		Label:         label,
+		Region:        c.civoGoClient.Region,
+		CIDRv4:        cidrv4,
+		NameserversV4: nameserversv4,
+	}
+	network, err := c.civoGoClient.CreateNetwork(configs)
 	if err != nil {
 		return nil, err
 	}
@@ -282,8 +288,14 @@ func (c *CivoClient) CreateNewNetwork(label string) (*civogo.NetworkResult, erro
 }
 
 // UpdateNetwork updates a network on Civo.
-func (c *CivoClient) UpdateNetwork(id string, label string) error {
-	network, err := c.civoGoClient.GetNetwork(id)
+func (c *CivoClient) UpdateNetwork(id string, label string, cidrv4 string, nameserversv4 []string) error {
+	configs := civogo.NetworkConfig{
+		Label:         label,
+		Region:        c.civoGoClient.Region,
+		CIDRv4:        cidrv4,
+		NameserversV4: nameserversv4,
+	}
+	network, err := c.civoGoClient.UpdateNetwork(id, configs)
 	if err != nil {
 		return err
 	}
