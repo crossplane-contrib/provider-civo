@@ -42,8 +42,10 @@ const (
 )
 
 var (
-	// NetworkActive defines Status of a network
-	NetworkActive   = "Active"
+	// NetworkActive defines active Status of a network
+	NetworkActive = "Active"
+
+	// NetworkDeleting defines deleting Status of a network
 	NetworkDeleting = "Deleting"
 )
 
