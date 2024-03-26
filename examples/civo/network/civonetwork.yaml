@@ -1,8 +1,8 @@
 kind: CivoNetwork
 apiVersion: network.civo.crossplane.io/v1alpha1
 metadata:
-  name: test-network
+  name: my-test-nt
 spec:
-  name: test-network
+  name: my-test-nt
   providerReference:
     name: civo-provider
