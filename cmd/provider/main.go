@@ -20,8 +20,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/crossplane-contrib/provider-civo/internal/controller/civonetwork"
+
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
+
+	civoinstance "github.com/crossplane-contrib/provider-civo/internal/controller/civoinstance"
 
 	log "github.com/sirupsen/logrus"
 
@@ -31,9 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/crossplane-contrib/provider-civo/apis"
-	"github.com/crossplane-contrib/provider-civo/internal/controller/civoinstance"
-	"github.com/crossplane-contrib/provider-civo/internal/controller/civokubernetes"
-	"github.com/crossplane-contrib/provider-civo/internal/controller/civonetwork"
+	civokubernetes "github.com/crossplane-contrib/provider-civo/internal/controller/civokubernetes"
 	civoprovider "github.com/crossplane-contrib/provider-civo/internal/controller/provider"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 )
