@@ -1,9 +1,9 @@
 kind: CivoNetwork
 apiVersion: network.civo.crossplane.io/v1alpha1
 metadata:
-  name: civo-test-network
+  name: civo-network
 spec:
-  name: civo-test-network
+  name: civo-network
   cidr_v4: "192.168.0.0/24"
   nameservers_v4:
     - "8.8.8.8"
