@@ -121,6 +121,9 @@ type CivoKubernetesList struct {
 	Items           []CivoKubernetes `json:"items"`
 }
 
+// KubernetesClusterPoolConfig defines the configuration for a pool of nodes in a Civo Kubernetes cluster.
+// Should be converted to the equivalent type in the civogo package before being used.
+// Should always be identical to the KubernetesClusterPoolConfig in the civogo package.
 type KubernetesClusterPoolConfig struct {
 	Region           string            `json:"region,omitempty"`
 	ID               string            `json:"id,omitempty"`
