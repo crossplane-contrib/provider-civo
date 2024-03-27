@@ -282,6 +282,9 @@ func (c *CivoClient) CreateNewNetwork(label string, cidrv4 string, nameserversv4
 	}
 	network, err := c.civoGoClient.CreateNetwork(configs)
 	if err != nil {
+		if strings.Contains(err.Error(), "DatabaseNetworkExistsError") {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return network, nil
