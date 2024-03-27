@@ -1,9 +1,10 @@
 package civocli
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strconv"
 	"strings"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/civo/civogo"
 	providerCivoCluster "github.com/crossplane-contrib/provider-civo/apis/civo/cluster/v1alpha1"
@@ -239,9 +240,12 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string,
 func (c *CivoClient) UpdateK3sCluster(desiredCluster *providerCivoCluster.CivoKubernetes,
 	remoteCivoCluster *civogo.KubernetesCluster, provider *v1alpha1provider.ProviderConfig) error {
 
+	// Convert desiredCluster.Spec.Pools to the type expected by civogo package.
+	convertedPools := ConvertKubernetesClusterPoolConfigs(desiredCluster.Spec.Pools)
+
 	_, err := c.civoGoClient.UpdateKubernetesCluster(desiredCluster.Spec.Name,
 		&civogo.KubernetesClusterConfig{
-			Pools: desiredCluster.Spec.Pools,
+			Pools: convertedPools,
 		})
 
 	return err
