@@ -207,6 +207,9 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	}
 	cr.SetConditions(xpv1.Deleting())
 	err := e.civoClient.DeleteNetwork(cr.Status.AtProvider.ID)
+	if err == nil {
+		return nil
+	}
 	return errors.Wrap(err, errDeleteNetwork)
 }
 

@@ -317,6 +317,9 @@ func (c *CivoClient) UpdateNetwork(id string, label string, cidrv4 string, names
 func (c *CivoClient) DeleteNetwork(id string) error {
 	network, err := c.civoGoClient.GetNetwork(id)
 	if err != nil {
+		if strings.Contains(err.Error(), "DatabaseNetworkNotFoundError") {
+			return nil
+		}
 		return err
 	}
 	_, err = c.civoGoClient.DeleteNetwork(network.ID)
