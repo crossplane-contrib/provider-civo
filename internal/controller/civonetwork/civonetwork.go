@@ -179,9 +179,25 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.New(errNotCivoNetwork)
 	}
 
-	err := e.civoClient.UpdateNetwork(cr.Status.AtProvider.ID, cr.Spec.Name, cr.Spec.CIDRv4, cr.Spec.NameserversV4)
+	// Retrieve the current state of the network
+	currentNetwork, err := e.civoClient.GetNetwork(cr.Spec.Name)
+	if err != nil {
+		return managed.ExternalUpdate{}, err
+	}
+	if currentNetwork == nil {
+		return managed.ExternalUpdate{}, errors.New("network not found")
+	}
 
-	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateNetwork)
+	// Check if fields like NameserversV4, Name, or Label have changed
+	if !stringSlicesEqual(currentNetwork.NameserversV4, cr.Spec.NameserversV4) ||
+		currentNetwork.Label != cr.Spec.Name || currentNetwork.CIDR != cr.Spec.CIDRv4 {
+		err := e.civoClient.UpdateNetwork(currentNetwork.ID, cr.Spec.Name, cr.Spec.CIDRv4, cr.Spec.NameserversV4)
+		if err != nil {
+			return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateNetwork)
+		}
+	}
+
+	return managed.ExternalUpdate{}, nil
 }
 
 func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
