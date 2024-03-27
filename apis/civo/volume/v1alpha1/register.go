@@ -25,7 +25,7 @@ import (
 
 // Package type metadata.
 const (
-	Group   = "cluster.civo.crossplane.io"
+	Group   = "volume.civo.crossplane.io"
 	Version = "v1alpha1"
 )
 
