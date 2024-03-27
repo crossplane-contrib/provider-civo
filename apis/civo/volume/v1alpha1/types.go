@@ -19,48 +19,56 @@ import (
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 )
 
-// CivoNetworkObservation are the observable fields of a CivoNetwork.
-type CivoNetworkObservation struct {
-	ID      string `json:"id"`
-	Name    string `json:"name"`
-	Default bool   `json:"default"`
-	CIDR    string `json:"cidr"`
-
-	// Used Capacity of the bucket in percentage.
-	Label         string   `json:"label"`
-	Status        string   `json:"status"`
-	IPv4Enabled   bool     `json:"ipv4_enabled"`
-	NameServersV4 []string `json:"nameservers_v4"`
-
+// CivoVolumeObservation are the observable fields of a CivoVolume.
+type CivoVolumeObservation struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	ClusterID  string `json:"cluster_id"`
+	NetworkID  string `json:"network_id"`
+	InstanceID string `json:"instance_id"`
+	Size       string `json:"size"`
+	Status     string `json:"status"`
 	// Details regarding current state of the bucket.
 	Conditions []metav1.Condition `json:"conditions"`
 }
 
-// CivoNetworkSpec  defines schema for a CivoNetwork resource.
-type CivoNetworkSpec struct {
+// CivoVolumeSpec  defines schema for a CivoVolume resource.
+type CivoVolumeSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
 
-	// Name for the private network.
+	// Name that you wish to use to refer to this volume.
 	// +required
 	// +immutable
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
 
+	// Size for the volume a minimum of 1 and a maximum of your available disk space from your quota specifies the size of the volume in gigabytes
+	// +required
+	// +immutable
+	// +kubebuilder:validation:Required
+	Size string `json:"Size"`
+
+	// NetworkID for the network in which you wish to create the volume.
+	// +required
+	// +immutable
+	// +kubebuilder:validation:Required
+	NetworkID string `json:"network_id"`
+
 	// ProviderReference holds configs (region, API key etc.) for the crossplane provider that is being used.
 	ProviderReference *xpv1.Reference `json:"providerReference"`
 }
 
-// A CivoNetworkStatus represents the observed state of a CivoNetwork.
-type CivoNetworkStatus struct {
+// A CivoVolumeStatus represents the observed state of a CivoVolume.
+type CivoVolumeStatus struct {
 	xpv1.ResourceStatus `json:",inline"`
-	AtProvider          *CivoNetworkObservation `json:"atProvider,omitempty"`
+	AtProvider          *CivoVolumeObservation `json:"atProvider,omitempty"`
 }
 
 // SetManagementPolicies sets up management policies.
-func (mg *CivoNetwork) SetManagementPolicies(r xpv1.ManagementPolicies) {}
+func (mg *CivoVolume) SetManagementPolicies(r xpv1.ManagementPolicies) {}
 
 // GetManagementPolicies gets management policies.
-func (mg *CivoNetwork) GetManagementPolicies() xpv1.ManagementPolicies {
+func (mg *CivoVolume) GetManagementPolicies() xpv1.ManagementPolicies {
 	// Note: Crossplane runtime reconciler should leave handling of
 	// ManagementPolicies to the provider controller. This is a temporary hack
 	// until we remove the ManagementPolicy field from the Provider Kubernetes
@@ -69,12 +77,12 @@ func (mg *CivoNetwork) GetManagementPolicies() xpv1.ManagementPolicies {
 }
 
 // SetPublishConnectionDetailsTo sets up connection details.
-func (mg *CivoNetwork) SetPublishConnectionDetailsTo(r *xpv1.PublishConnectionDetailsTo) {
+func (mg *CivoVolume) SetPublishConnectionDetailsTo(r *xpv1.PublishConnectionDetailsTo) {
 	mg.Spec.PublishConnectionDetailsTo = r
 }
 
 // GetPublishConnectionDetailsTo gets publish connection details.
-func (mg *CivoNetwork) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionDetailsTo {
+func (mg *CivoVolume) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionDetailsTo {
 	return mg.Spec.PublishConnectionDetailsTo
 }
 
@@ -85,20 +93,20 @@ func (mg *CivoNetwork) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionDe
 // +kubebuilder:printcolumn:name="Bucket",type="string",JSONPath=".spec.name",description="Name of the Bucket which can be used against S3 API"
 // +kubebuilder:printcolumn:name="Size",type="string",JSONPath=".spec.maxSize",description="Size of the Bucket in GB"
 
-// CivoNetwork is the Schema for the CivoNetwork API
-type CivoNetwork struct {
+// CivoVolume is the Schema for the CivoVolume API
+type CivoVolume struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   CivoNetworkSpec   `json:"spec"`
-	Status CivoNetworkStatus `json:"status,omitempty"`
+	Spec   CivoVolumeSpec   `json:"spec"`
+	Status CivoVolumeStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// CivoNetworkList contains a list of CivoNetworkList
-type CivoNetworkList struct {
+// CivoVolumeList contains a list of CivoVolumeList
+type CivoVolumeList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []CivoNetwork `json:"items"`
+	Items           []CivoVolume `json:"items"`
 }
