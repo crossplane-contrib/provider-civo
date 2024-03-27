@@ -128,6 +128,14 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 
 	switch civoNetwork.Status {
 	case NetworkActive:
+		// Check if NameserversV4 field has changed
+		if !stringSlicesEqual(civoNetwork.NameserversV4, cr.Spec.NameserversV4) {
+			cr.SetConditions(xpv1.Creating())
+			return managed.ExternalObservation{
+				ResourceExists:   true,
+				ResourceUpToDate: false,
+			}, nil
+		}
 		cr.SetConditions(xpv1.Available())
 		return managed.ExternalObservation{
 			ResourceExists:   true,
@@ -184,4 +192,17 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	cr.SetConditions(xpv1.Deleting())
 	err := e.civoClient.DeleteNetwork(cr.Status.AtProvider.ID)
 	return errors.Wrap(err, errDeleteNetwork)
+}
+
+// stringSlicesEqual returns true if two string slices are equal, false otherwise.
+func stringSlicesEqual(slice1, slice2 []string) bool {
+	if len(slice1) != len(slice2) {
+		return false
+	}
+	for i := range slice1 {
+		if slice1[i] != slice2[i] {
+			return false
+		}
+	}
+	return true
 }

@@ -20,23 +20,21 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/crossplane-contrib/provider-civo/internal/controller/civonetwork"
-
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
-	"github.com/crossplane-contrib/provider-civo/internal/controller/civoinstance"
-
 	log "github.com/sirupsen/logrus"
 
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"gopkg.in/alecthomas/kingpin.v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/crossplane-contrib/provider-civo/apis"
+	"github.com/crossplane-contrib/provider-civo/internal/controller/civoinstance"
 	"github.com/crossplane-contrib/provider-civo/internal/controller/civokubernetes"
+	"github.com/crossplane-contrib/provider-civo/internal/controller/civonetwork"
 	civoprovider "github.com/crossplane-contrib/provider-civo/internal/controller/provider"
-	"github.com/crossplane/crossplane-runtime/pkg/logging"
 )
 
 func init() {
