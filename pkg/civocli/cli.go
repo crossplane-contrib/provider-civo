@@ -259,3 +259,66 @@ func (c *CivoClient) DeleteK3sCluster(name string) error {
 	}
 	return err
 }
+
+// GetNetwork gets a network on Civo by ID.
+func (c *CivoClient) GetNetwork(id string) (*civogo.Network, error) {
+	network, err := c.civoGoClient.GetNetwork(id)
+	if err != nil {
+		if strings.Contains(err.Error(), "DatabaseNetworkNotFoundError") {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return network, nil
+}
+
+// CreateNewNetwork creates a new network on Civo.
+func (c *CivoClient) CreateNewNetwork(label string, cidrv4 string, nameserversv4 []string) (*civogo.NetworkResult, error) {
+	configs := civogo.NetworkConfig{
+		Label:         label,
+		Region:        c.civoGoClient.Region,
+		CIDRv4:        cidrv4,
+		NameserversV4: nameserversv4,
+	}
+	network, err := c.civoGoClient.CreateNetwork(configs)
+	if err != nil {
+		if strings.Contains(err.Error(), "DatabaseNetworkExistsError") {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return network, nil
+}
+
+// UpdateNetwork updates a network on Civo.
+func (c *CivoClient) UpdateNetwork(id string, label string, cidrv4 string, nameserversv4 []string) error {
+	configs := civogo.NetworkConfig{
+		Label:         label,
+		Region:        c.civoGoClient.Region,
+		CIDRv4:        cidrv4,
+		NameserversV4: nameserversv4,
+	}
+	network, err := c.civoGoClient.UpdateNetwork(id, configs)
+	if err != nil {
+		return err
+	}
+	network.Label = label
+	_, err = c.civoGoClient.RenameNetwork(label, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// DeleteNetwork deletes a network on Civo.
+func (c *CivoClient) DeleteNetwork(id string) error {
+	network, err := c.civoGoClient.GetNetwork(id)
+	if err != nil {
+		return err
+	}
+	_, err = c.civoGoClient.DeleteNetwork(network.ID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
