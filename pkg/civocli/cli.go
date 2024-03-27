@@ -1,11 +1,15 @@
 package civocli
 
 import (
+	"strconv"
 	"strings"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/civo/civogo"
 	providerCivoCluster "github.com/crossplane-contrib/provider-civo/apis/civo/cluster/v1alpha1"
 	"github.com/crossplane-contrib/provider-civo/apis/civo/instance/v1alpha1"
+	v1alpha1objectstore "github.com/crossplane-contrib/provider-civo/apis/civo/objectstore/v1alpha1"
 	v1alpha1provider "github.com/crossplane-contrib/provider-civo/apis/civo/provider/v1alpha1"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -49,6 +53,16 @@ func GenerateObservation(instance *civogo.Instance) (v1alpha1.CivoInstanceObserv
 		}
 	}
 	return observation, nil
+}
+
+// GenerateObjectStoreObservation creates the CivoInstanceObservation from object store infos
+func GenerateObjectStoreObservation(stats *civogo.ObjectStoreStats) (*v1alpha1objectstore.CivoObjectStoreObservation, error) {
+	percentage := stats.SizeKBUtilised * 100 / stats.MaxSizeKB
+	observation := v1alpha1objectstore.CivoObjectStoreObservation{
+		UtilisedPercentage: strconv.FormatInt(percentage, 10),
+		Conditions:         make([]metav1.Condition, 0),
+	}
+	return &observation, nil
 }
 
 // NewCivoClient creates a new Civo client.
@@ -226,9 +240,12 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string,
 func (c *CivoClient) UpdateK3sCluster(desiredCluster *providerCivoCluster.CivoKubernetes,
 	remoteCivoCluster *civogo.KubernetesCluster, provider *v1alpha1provider.ProviderConfig) error {
 
+	// Convert desiredCluster.Spec.Pools to the type expected by civogo package.
+	convertedPools := ConvertKubernetesClusterPoolConfigs(desiredCluster.Spec.Pools)
+
 	_, err := c.civoGoClient.UpdateKubernetesCluster(desiredCluster.Spec.Name,
 		&civogo.KubernetesClusterConfig{
-			Pools: desiredCluster.Spec.Pools,
+			Pools: convertedPools,
 		})
 
 	return err
@@ -258,4 +275,78 @@ func (c *CivoClient) DeleteK3sCluster(name string) error {
 		log.Debugf("error [%s %s %s %s]", resp.Result, resp.ErrorDetails, resp.ErrorCode, resp.ErrorReason)
 	}
 	return err
+}
+
+// GetObjectStore fetches a object store by its ID.
+func (c *CivoClient) GetObjectStore(id string) (*civogo.ObjectStore, error) {
+	objectStore, err := c.civoGoClient.GetObjectStore(id)
+	if err != nil {
+		if strings.Contains(err.Error(), "ZeroMatchesError") {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return objectStore, nil
+}
+
+// CreateObjectStore creates object store.
+func (c *CivoClient) CreateObjectStore(name string, size int, accessKeyID string) (*civogo.ObjectStore, error) {
+	objectStore, err := c.civoGoClient.NewObjectStore(&civogo.CreateObjectStoreRequest{
+		Name:        name,
+		MaxSizeGB:   int64(size),
+		AccessKeyID: accessKeyID,
+		Region:      c.civoGoClient.Region,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return objectStore, err
+}
+
+// UpdateObjectStore updates size of object store by its ID.
+func (c *CivoClient) UpdateObjectStore(id string, size int) error {
+	_, err := c.civoGoClient.UpdateObjectStore(id, &civogo.UpdateObjectStoreRequest{
+		MaxSizeGB: int64(size),
+		Region:    c.civoGoClient.Region,
+	})
+	return err
+}
+
+// DeleteObjectStore updates size of object store by its ID.
+func (c *CivoClient) DeleteObjectStore(id string) error {
+	_, err := c.civoGoClient.DeleteObjectStore(id)
+	return err
+}
+
+// GetObjectStoreByName updates size of object store by its name.
+func (c *CivoClient) GetObjectStoreByName(name string) (*civogo.ObjectStore, error) {
+	allObjectStore, err := c.civoGoClient.ListObjectStores()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, value := range allObjectStore.Items {
+		if value.Name == name {
+			return &value, nil
+		}
+	}
+	return nil, errors.New("No such object store found")
+}
+
+// GetObjectStoreCredential fetches credentials of object store.
+func (c *CivoClient) GetObjectStoreCredential(credentialID string) *civogo.ObjectStoreCredential {
+	cred, err := c.civoGoClient.GetObjectStoreCredential(credentialID)
+	if err != nil {
+		return nil
+	}
+	return cred
+}
+
+// GetObjectStoreStats fetches stats of object store.
+func (c *CivoClient) GetObjectStoreStats(id string) *civogo.ObjectStoreStats {
+	stats, err := c.civoGoClient.GetObjectStoreStats(id)
+	if err != nil {
+		return nil
+	}
+	return stats
 }
