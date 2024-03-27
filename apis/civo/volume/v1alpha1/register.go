@@ -37,12 +37,12 @@ var (
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
 )
 
-// CivoKubernetes type metadata.
+// CivoVolume type metadata.
 var (
-	CivoKubernetesKind             = reflect.TypeOf(CivoVolume{}).Name()
-	CivoKubernetesGroupKind        = schema.GroupKind{Group: Group, Kind: CivoKubernetesKind}.String()
-	CivoKubernetesKindAPIVersion   = CivoKubernetesKind + "." + SchemeGroupVersion.String()
-	CivoKubernetesGroupVersionKind = SchemeGroupVersion.WithKind(CivoKubernetesKind)
+	CivoVolumeKind             = reflect.TypeOf(CivoVolume{}).Name()
+	CivoVolumeGroupKind        = schema.GroupKind{Group: Group, Kind: CivoVolumeKind}.String()
+	CivoVolumeKindAPIVersion   = CivoVolumeKind + "." + SchemeGroupVersion.String()
+	CivoVolumeGroupVersionKind = SchemeGroupVersion.WithKind(CivoVolumeKind)
 )
 
 func init() {
