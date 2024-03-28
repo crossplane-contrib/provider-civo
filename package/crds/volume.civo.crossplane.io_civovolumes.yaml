@@ -58,6 +58,10 @@ spec:
                 description: Size for the volume a minimum of 1 and a maximum of your
                   available disk space from your quota specifies the size of the volume
                   in gigabytes
+                type: integer
+              bootable:
+                type: boolean
+              cluster_id:
                 type: string
               deletionPolicy:
                 default: Delete
@@ -375,7 +379,7 @@ spec:
                   network_id:
                     type: string
                   size:
-                    type: string
+                    type: integer
                   status:
                     type: string
                 required:

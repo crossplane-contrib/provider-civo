@@ -26,7 +26,7 @@ type CivoVolumeObservation struct {
 	ClusterID  string `json:"cluster_id"`
 	NetworkID  string `json:"network_id"`
 	InstanceID string `json:"instance_id"`
-	Size       string `json:"size"`
+	Size       int    `json:"size"`
 	Status     string `json:"status"`
 	// Details regarding current state of the bucket.
 	Conditions []metav1.Condition `json:"conditions"`
@@ -46,13 +46,19 @@ type CivoVolumeSpec struct {
 	// +required
 	// +immutable
 	// +kubebuilder:validation:Required
-	Size string `json:"Size"`
+	Size int `json:"Size"`
 
 	// NetworkID for the network in which you wish to create the volume.
 	// +required
 	// +immutable
 	// +kubebuilder:validation:Required
 	NetworkID string `json:"network_id"`
+
+	// +optional
+	ClusterID string `json:"cluster_id,omitempty"`
+
+	// +optional
+	Bootable bool `json:"bootable,omitempty"`
 
 	// ProviderReference holds configs (region, API key etc.) for the crossplane provider that is being used.
 	ProviderReference *xpv1.Reference `json:"providerReference"`
