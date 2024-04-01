@@ -41,8 +41,9 @@ const (
 	errNotCivoVolume       = "managed resource is not a CivoVolume"
 	errCreateVolume        = "cannot create Volume"
 	errDeleteVolume        = "cannot delete Volume"
-	errGetSSHPubKeySecret  = "cannot get ssh public key secret %s"
 	errUpdateVolume        = "cannot update Volume"
+	volumeStateActive      = "available"
+	volumeStateBuilding    = "BUILDING"
 )
 
 type connecter struct {
@@ -114,7 +115,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotCivoVolume)
 	}
-	civoVolume, err := e.civoClient.GetVolume(cr.Status.AtProvider.ID)
+	civoVolume, err := e.civoClient.GetVolume(cr.Spec.Name)
 	if err != nil {
 		return managed.ExternalObservation{ResourceExists: false}, err
 	}
@@ -128,13 +129,13 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	switch civoVolume.Status {
-	case civocli.StateActive:
+	case volumeStateActive:
 		cr.SetConditions(xpv1.Available())
 		return managed.ExternalObservation{
 			ResourceExists:   true,
 			ResourceUpToDate: true,
 		}, nil
-	case civocli.StateBuilding:
+	case volumeStateBuilding:
 		cr.SetConditions(xpv1.Creating())
 		return managed.ExternalObservation{
 			ResourceExists:   true,
@@ -159,7 +160,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	//TODO: Check behavior of when optional fields are not provided
 	_, err = e.civoClient.CreateVolume(cr.Spec.Name, cr.Spec.Size, cr.Spec.NetworkID, cr.Spec.ClusterID, cr.Spec.Bootable)
 	if err != nil {
-		return managed.ExternalCreation{}, err
+		return managed.ExternalCreation{}, errors.New(errCreateVolume)
 	}
 	cr.SetConditions(xpv1.Creating())
 	return managed.ExternalCreation{}, nil

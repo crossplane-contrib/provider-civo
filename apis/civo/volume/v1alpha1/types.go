@@ -28,8 +28,6 @@ type CivoVolumeObservation struct {
 	InstanceID string `json:"instance_id"`
 	Size       int    `json:"size"`
 	Status     string `json:"status"`
-	// Details regarding current state of the bucket.
-	Conditions []metav1.Condition `json:"conditions"`
 }
 
 // CivoVolumeSpec  defines schema for a CivoVolume resource.
