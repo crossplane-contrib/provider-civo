@@ -22,9 +22,6 @@ import (
 // CivoVolumeObservation are the observable fields of a CivoVolume.
 type CivoVolumeObservation struct {
 	ID         string `json:"id"`
-	Name       string `json:"name"`
-	ClusterID  string `json:"cluster_id"`
-	NetworkID  string `json:"network_id"`
 	InstanceID string `json:"instance_id"`
 	Size       int    `json:"size"`
 	Status     string `json:"status"`

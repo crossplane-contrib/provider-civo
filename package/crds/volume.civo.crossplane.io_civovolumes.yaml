@@ -304,26 +304,17 @@ spec:
                 description: CivoVolumeObservation are the observable fields of a
                   CivoVolume.
                 properties:
-                  cluster_id:
-                    type: string
                   id:
                     type: string
                   instance_id:
-                    type: string
-                  name:
-                    type: string
-                  network_id:
                     type: string
                   size:
                     type: integer
                   status:
                     type: string
                 required:
-                - cluster_id
                 - id
                 - instance_id
-                - name
-                - network_id
                 - size
                 - status
                 type: object
