@@ -56,9 +56,6 @@ func GenerateObservation(instance *civogo.Instance) (v1alpha1.CivoInstanceObserv
 func GenerateVolumeObservation(volume *civogo.Volume) (*v1alpha1volume.CivoVolumeObservation, error) {
 	observation := v1alpha1volume.CivoVolumeObservation{
 		ID:         volume.ID,
-		Name:       volume.Name,
-		ClusterID:  volume.ClusterID,
-		NetworkID:  volume.NetworkID,
 		InstanceID: volume.InstanceID,
 		Size:       volume.SizeGigabytes,
 		Status:     volume.Status,
@@ -320,7 +317,7 @@ func (c *CivoClient) DeleteVolume(name string) error {
 		return err
 	}
 	if volm == nil {
-		errors.New("no such volume exists")
+		return errors.New("no such volume exists")
 	}
 	resp, err := c.civoGoClient.DeleteVolume(volm.ID)
 	if err != nil {
@@ -336,7 +333,7 @@ func (c *CivoClient) ResizeVolume(name string, size int) error {
 		return err
 	}
 	if volm == nil {
-		errors.New("no such volume exists")
+		return errors.New("no such volume exists")
 	}
 	resp, err := c.civoGoClient.ResizeVolume(volm.ID, size)
 	if err != nil {
@@ -345,6 +342,7 @@ func (c *CivoClient) ResizeVolume(name string, size int) error {
 	return err
 }
 
+// AttachVolume attaches a volume to an instance using their respective IDs.
 func (c *CivoClient) AttachVolume(volumeID string, instanceID string) error {
 	resp, err := c.civoGoClient.AttachVolume(volumeID, instanceID)
 	if err != nil {
