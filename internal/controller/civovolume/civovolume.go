@@ -42,6 +42,7 @@ const (
 	errCreateVolume        = "cannot create Volume"
 	errDeleteVolume        = "cannot delete Volume"
 	errUpdateVolume        = "cannot update Volume"
+	errVolumeAttach        = "cannot attach volume"
 	volumeStateActive      = "available"
 	volumeStateBuilding    = "BUILDING"
 )
@@ -175,6 +176,14 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	if cr.Status.AtProvider.Size == cr.Spec.Size {
 		return managed.ExternalUpdate{}, nil
+	}
+
+	if cr.Status.AtProvider.InstanceID != cr.Spec.InstanceID {
+		err := e.civoClient.AttachVolume(cr.Status.AtProvider.ID, cr.Spec.InstanceID)
+		if err != nil {
+			return managed.ExternalUpdate{}, errors.Wrap(err, errVolumeAttach)
+		}
+
 	}
 
 	err := e.civoClient.ResizeVolume(cr.Status.AtProvider.ID, cr.Spec.Size)

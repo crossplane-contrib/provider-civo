@@ -344,3 +344,12 @@ func (c *CivoClient) ResizeVolume(name string, size int) error {
 	}
 	return err
 }
+
+func (c *CivoClient) AttachVolume(volumeID string, instanceID string) error {
+	resp, err := c.civoGoClient.AttachVolume(volumeID, instanceID)
+	if err != nil {
+		log.Debugf("error [%s %s %s %s]", resp.Result, resp.ErrorDetails, resp.ErrorCode, resp.ErrorReason)
+		return errors.New("error attaching volume")
+	}
+	return err
+}

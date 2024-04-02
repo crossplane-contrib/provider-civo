@@ -52,9 +52,15 @@ type CivoVolumeSpec struct {
 	// +kubebuilder:validation:Required
 	NetworkID string `json:"network_id"`
 
+	// ClusterID is the identifier for the cluster to which this volume belongs, if applicable.
 	// +optional
 	ClusterID string `json:"cluster_id,omitempty"`
 
+	// InstanceID is the identifier for the instance to which this volume is attached, if applicable.
+	// +optional
+	InstanceID string `json:"instance_id,omitempty"`
+
+	// Bootable specifies whether the volume is bootable or not.
 	// +optional
 	Bootable bool `json:"bootable,omitempty"`
 

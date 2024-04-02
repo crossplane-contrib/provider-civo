@@ -60,8 +60,12 @@ spec:
                   in gigabytes
                 type: integer
               bootable:
+                description: Bootable specifies whether the volume is bootable or
+                  not.
                 type: boolean
               cluster_id:
+                description: ClusterID is the identifier for the cluster to which
+                  this volume belongs, if applicable.
                 type: string
               deletionPolicy:
                 default: Delete
@@ -76,6 +80,10 @@ spec:
                 enum:
                 - Orphan
                 - Delete
+                type: string
+              instance_id:
+                description: InstanceID is the identifier for the instance to which
+                  this volume is attached, if applicable.
                 type: string
               managementPolicies:
                 default:
