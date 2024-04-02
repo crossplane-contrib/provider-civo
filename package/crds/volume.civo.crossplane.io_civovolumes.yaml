@@ -54,11 +54,6 @@ spec:
           spec:
             description: CivoVolumeSpec  defines schema for a CivoVolume resource.
             properties:
-              Size:
-                description: Size for the volume a minimum of 1 and a maximum of your
-                  available disk space from your quota specifies the size of the volume
-                  in gigabytes
-                type: integer
               bootable:
                 description: Bootable specifies whether the volume is bootable or
                   not.
@@ -270,6 +265,11 @@ spec:
                 required:
                 - name
                 type: object
+              size:
+                description: Size for the volume a minimum of 1 and a maximum of your
+                  available disk space from your quota specifies the size of the volume
+                  in gigabytes
+                type: integer
               writeConnectionSecretToRef:
                 description: |-
                   WriteConnectionSecretToReference specifies the namespace and name of a
@@ -292,10 +292,10 @@ spec:
                 - namespace
                 type: object
             required:
-            - Size
             - name
             - network_id
             - providerReference
+            - size
             type: object
           status:
             description: A CivoVolumeStatus represents the observed state of a CivoVolume.

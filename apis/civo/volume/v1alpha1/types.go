@@ -41,7 +41,7 @@ type CivoVolumeSpec struct {
 	// +required
 	// +immutable
 	// +kubebuilder:validation:Required
-	Size int `json:"Size"`
+	Size int `json:"size"`
 
 	// NetworkID for the network in which you wish to create the volume.
 	// +required
