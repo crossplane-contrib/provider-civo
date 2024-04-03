@@ -176,8 +176,10 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	if civoCluster != nil {
 		return managed.ExternalCreation{}, nil
 	}
+	// Convert cr.Spec.Pools to the type expected by civogo package.
+	convertedPools := civocli.ConvertKubernetesClusterPoolConfigs(cr.Spec.Pools)
 	// Create or Update
-	err = e.civoClient.CreateNewK3sCluster(cr.Spec.Name, cr.Spec.Pools, cr.Spec.Applications, cr.Spec.CNIPlugin, cr.Spec.Version)
+	err = e.civoClient.CreateNewK3sCluster(cr.Spec.Name, convertedPools, cr.Spec.Applications, cr.Spec.CNIPlugin, cr.Spec.Version)
 	if err != nil {
 		return managed.ExternalCreation{}, err
 	}
