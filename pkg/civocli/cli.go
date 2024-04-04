@@ -226,9 +226,12 @@ func (c *CivoClient) CreateNewK3sCluster(clusterName string,
 func (c *CivoClient) UpdateK3sCluster(desiredCluster *providerCivoCluster.CivoKubernetes,
 	remoteCivoCluster *civogo.KubernetesCluster, provider *v1alpha1provider.ProviderConfig) error {
 
+	// Convert desiredCluster.Spec.Pools to the type expected by civogo package.
+	convertedPools := ConvertKubernetesClusterPoolConfigs(desiredCluster.Spec.Pools)
+
 	_, err := c.civoGoClient.UpdateKubernetesCluster(desiredCluster.Spec.Name,
 		&civogo.KubernetesClusterConfig{
-			Pools: desiredCluster.Spec.Pools,
+			Pools: convertedPools,
 		})
 
 	return err

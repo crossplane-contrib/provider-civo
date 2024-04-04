@@ -125,15 +125,58 @@ spec:
                 type: string
               pools:
                 items:
-                  description: KubernetesClusterPoolConfig is used to create a new
-                    cluster pool
+                  description: |-
+                    KubernetesClusterPoolConfig defines the configuration for a pool of nodes in a Civo Kubernetes cluster.
+                    Should be converted to the equivalent type in the civogo package before being used.
+                    Should always be identical to the KubernetesClusterPoolConfig in the civogo package.
                   properties:
                     count:
                       type: integer
                     id:
                       type: string
+                    labels:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    public_ip_node_pool:
+                      type: boolean
+                    region:
+                      type: string
                     size:
                       type: string
+                    taints:
+                      items:
+                        description: |-
+                          The node this Taint is attached to has the "effect" on
+                          any pod that does not tolerate the Taint.
+                        properties:
+                          effect:
+                            description: |-
+                              Required. The effect of the taint on pods
+                              that do not tolerate the taint.
+                              Valid effects are NoSchedule, PreferNoSchedule and NoExecute.
+                            type: string
+                          key:
+                            description: Required. The taint key to be applied to
+                              a node.
+                            type: string
+                          timeAdded:
+                            description: |-
+                              TimeAdded represents the time at which the taint was added.
+                              It is only written for NoExecute taints.
+                            format: date-time
+                            type: string
+                          value:
+                            description: The taint value corresponding to the taint
+                              key.
+                            type: string
+                        required:
+                        - effect
+                        - key
+                        type: object
+                      type: array
+                  required:
+                  - taints
                   type: object
                 type: array
               providerConfigRef:
