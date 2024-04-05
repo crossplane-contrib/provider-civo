@@ -262,3 +262,68 @@ func (c *CivoClient) DeleteK3sCluster(name string) error {
 	}
 	return err
 }
+
+// GetObjectStore fetches a object store by its ID.
+func (c *CivoClient) GetObjectStore(id string) (*civogo.ObjectStore, error) {
+	objectStore, err := c.civoGoClient.GetObjectStore(id)
+	if err != nil {
+		if strings.Contains(err.Error(), "ZeroMatchesError") {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return objectStore, nil
+}
+
+// CreateObjectStore creates object store.
+func (c *CivoClient) CreateObjectStore(name string, size int, accessKeyID string) (*civogo.ObjectStore, error) {
+	objectStore, err := c.civoGoClient.NewObjectStore(&civogo.CreateObjectStoreRequest{
+		Name:        name,
+		MaxSizeGB:   int64(size),
+		AccessKeyID: accessKeyID,
+		Region:      c.civoGoClient.Region,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return objectStore, err
+}
+
+// UpdateObjectStore updates size of object store by its ID.
+func (c *CivoClient) UpdateObjectStore(id string, size int) error {
+	_, err := c.civoGoClient.UpdateObjectStore(id, &civogo.UpdateObjectStoreRequest{
+		MaxSizeGB: int64(size),
+		Region:    c.civoGoClient.Region,
+	})
+	return err
+}
+
+// DeleteObjectStore updates size of object store by its ID.
+func (c *CivoClient) DeleteObjectStore(id string) error {
+	_, err := c.civoGoClient.DeleteObjectStore(id)
+	return err
+}
+
+// GetObjectStoreByName updates size of object store by its name.
+func (c *CivoClient) GetObjectStoreByName(name string) (*civogo.ObjectStore, error) {
+	allObjectStore, err := c.civoGoClient.ListObjectStores()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, value := range allObjectStore.Items {
+		if value.Name == name {
+			return &value, nil
+		}
+	}
+	return nil, errors.New("No such object store found")
+}
+
+// GetObjectStoreCredential fetches credentials of object store.
+func (c *CivoClient) GetObjectStoreCredential(credentialID string) *civogo.ObjectStoreCredential {
+	cred, err := c.civoGoClient.GetObjectStoreCredential(credentialID)
+	if err != nil {
+		return nil
+	}
+	return cred
+}
