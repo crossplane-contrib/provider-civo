@@ -6,3 +6,4 @@
 /.vendor-new
 .vscode
 temp
+.idea/

@@ -36,15 +36,16 @@ import (
 )
 
 const (
-	errManagedUpdateFailed = "cannot update volume custom resource"
-	errGenObservation      = "cannot generate observation"
-	errNotCivoVolume       = "managed resource is not a CivoVolume"
-	errCreateVolume        = "cannot create Volume"
-	errDeleteVolume        = "cannot delete Volume"
-	errUpdateVolume        = "cannot update Volume"
-	errVolumeAttach        = "cannot attach volume"
-	volumeStateActive      = "available"
-	volumeStateBuilding    = "BUILDING"
+	errManagedUpdateFailed          = "cannot update volume custom resource"
+	errGenObservation               = "cannot generate observation"
+	errNotCivoVolume                = "managed resource is not a CivoVolume"
+	errCreateVolume                 = "cannot create Volume"
+	errDeleteVolume                 = "cannot delete Volume"
+	errUpdateVolume                 = "cannot update Volume"
+	errVolumeAttach                 = "cannot attach volume"
+	volumeStateAvailable            = "available"
+	volumeStatePendingInstanceStart = "pending_instance_start"
+	volumeStateAttached             = "attached"
 )
 
 type connecter struct {
@@ -130,17 +131,24 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	switch civoVolume.Status {
-	case volumeStateActive:
+	case volumeStateAvailable:
+		cr.SetConditions(xpv1.Creating())
+		return managed.ExternalObservation{
+			ResourceExists:   true,
+			ResourceUpToDate: false,
+		}, nil
+	case volumeStateAttached:
 		cr.SetConditions(xpv1.Available())
 		return managed.ExternalObservation{
 			ResourceExists:   true,
 			ResourceUpToDate: true,
 		}, nil
-	case volumeStateBuilding:
-		cr.SetConditions(xpv1.Creating())
+
+	case volumeStatePendingInstanceStart:
+		cr.SetConditions(xpv1.Available())
 		return managed.ExternalObservation{
 			ResourceExists:   true,
-			ResourceUpToDate: true,
+			ResourceUpToDate: false,
 		}, nil
 	}
 	return managed.ExternalObservation{}, nil
@@ -174,21 +182,21 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.New(errNotCivoVolume)
 	}
 
-	if cr.Status.AtProvider.Size == cr.Spec.Size {
-		return managed.ExternalUpdate{}, nil
-	}
-
-	if cr.Status.AtProvider.InstanceID != cr.Spec.InstanceID {
-		err := e.civoClient.AttachVolume(cr.Status.AtProvider.ID, cr.Spec.InstanceID)
-		if err != nil {
-			return managed.ExternalUpdate{}, errors.Wrap(err, errVolumeAttach)
+	// Check if the volume needs to be resized.
+	if cr.Status.AtProvider.Size != cr.Spec.Size {
+		if err := e.civoClient.ResizeVolume(cr.Status.AtProvider.ID, cr.Spec.Size); err != nil {
+			return managed.ExternalUpdate{}, errors.Wrap(err, "failed to resize volume")
 		}
-
 	}
 
-	err := e.civoClient.ResizeVolume(cr.Status.AtProvider.ID, cr.Spec.Size)
+	// Check if the volume needs to be attached to a different instance.
+	if cr.Status.AtProvider.InstanceID != cr.Spec.InstanceID && cr.Spec.InstanceID != "" {
+		if err := e.civoClient.AttachVolume(cr.Status.AtProvider.ID, cr.Spec.InstanceID); err != nil {
+			return managed.ExternalUpdate{}, errors.Wrap(err, "failed to attach volume to instance")
+		}
+	}
 
-	return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateVolume)
+	return managed.ExternalUpdate{}, nil
 }
 
 func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
