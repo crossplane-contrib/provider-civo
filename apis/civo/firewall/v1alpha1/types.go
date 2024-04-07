@@ -39,6 +39,7 @@ type CivoFirewallStatus struct {
 
 // +kubebuilder:object:root=true
 
+// CivoFirewall is the Schema for the CivoFirewalls API
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="MESSAGE",type="string",JSONPath=".status.atProvider.state"
 // Please replace `PROVIDER-NAME` with your actual provider name, like `aws`, `azure`, `gcp`, `alibaba`

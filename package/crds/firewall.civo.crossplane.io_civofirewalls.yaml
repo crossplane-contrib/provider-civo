@@ -28,8 +28,9 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Please replace `PROVIDER-NAME` with your actual provider name,
-          like `aws`, `azure`, `gcp`, `alibaba`
+        description: |-
+          CivoFirewall is the Schema for the CivoFirewalls API
+          Please replace `PROVIDER-NAME` with your actual provider name, like `aws`, `azure`, `gcp`, `alibaba`
         properties:
           apiVersion:
             description: |-
