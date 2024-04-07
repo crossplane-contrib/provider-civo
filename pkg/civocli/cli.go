@@ -6,7 +6,9 @@ import (
 	"github.com/civo/civogo"
 	providerCivoCluster "github.com/crossplane-contrib/provider-civo/apis/civo/cluster/v1alpha1"
 	"github.com/crossplane-contrib/provider-civo/apis/civo/instance/v1alpha1"
+	v1alpha1network "github.com/crossplane-contrib/provider-civo/apis/civo/network/v1alpha1"
 	v1alpha1provider "github.com/crossplane-contrib/provider-civo/apis/civo/provider/v1alpha1"
+
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -49,6 +51,19 @@ func GenerateObservation(instance *civogo.Instance) (v1alpha1.CivoInstanceObserv
 		}
 	}
 	return observation, nil
+}
+
+// GenerateNetworkObservation creates the CivoNetworkObservation from network info
+func GenerateNetworkObservation(stats *civogo.Network) (*v1alpha1network.CivoNetworkObservation, error) {
+	observation := v1alpha1network.CivoNetworkObservation{
+		ID:          stats.ID,
+		Name:        stats.Name,
+		Default:     stats.Default,
+		Label:       stats.Label,
+		Status:      stats.Status,
+		IPv4Enabled: stats.IPv4Enabled,
+	}
+	return &observation, nil
 }
 
 // NewCivoClient creates a new Civo client.

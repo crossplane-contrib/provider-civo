@@ -39,6 +39,7 @@ const (
 	errNotCivoNetwork = "managed resource is not a CivoNetwork"
 	errDeleteNetwork  = "cannot delete network"
 	errUpdateNetwork  = "cannot update network"
+	errGenObservation = "cannot generate observation"
 )
 
 var (
@@ -126,6 +127,11 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
 
+	cr.Status.AtProvider, err = civocli.GenerateNetworkObservation(civoNetwork)
+	if err != nil {
+		return managed.ExternalObservation{}, errors.Wrap(err, errGenObservation)
+	}
+
 	switch civoNetwork.Status {
 	case NetworkActive:
 		// Check if NameserversV4 field has changed
@@ -205,11 +211,12 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
 	if !ok {
 		return errors.New(errNotCivoNetwork)
 	}
-	cr.SetConditions(xpv1.Deleting())
 	err := e.civoClient.DeleteNetwork(cr.Status.AtProvider.ID)
 	if err == nil {
 		return nil
 	}
+	cr.SetConditions(xpv1.Deleting())
+
 	return errors.Wrap(err, errDeleteNetwork)
 }
 
