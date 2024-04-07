@@ -29,7 +29,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"gopkg.in/alecthomas/kingpin.v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
