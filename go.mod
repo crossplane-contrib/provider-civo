@@ -3,7 +3,7 @@ module github.com/crossplane-contrib/provider-civo
 go 1.22
 
 require (
-	github.com/civo/civogo v0.3.28
+	github.com/civo/civogo v0.3.66
 	github.com/crossplane/crossplane-runtime v1.15.0
 	github.com/crossplane/crossplane-tools v0.0.0-20201201125637-9ddc70edfd0d
 	github.com/pkg/errors v0.9.1
