@@ -312,7 +312,7 @@ func (c *CivoClient) UpdateObjectStore(id string, size int) error {
 	return err
 }
 
-// DeleteObjectStore updates size of object store by its ID.
+// DeleteObjectStore deletes a object store by its ID.
 func (c *CivoClient) DeleteObjectStore(id string) error {
 	_, err := c.civoGoClient.DeleteObjectStore(id)
 	return err

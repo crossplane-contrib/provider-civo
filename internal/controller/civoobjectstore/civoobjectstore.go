@@ -3,6 +3,7 @@ package civoobjectstore
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	v1alpha1provider "github.com/crossplane-contrib/provider-civo/apis/civo/provider/v1alpha1"
 	"github.com/crossplane-contrib/provider-civo/pkg/civocli"
@@ -223,19 +224,18 @@ func (e external) Delete(_ context.Context, mg resource.Managed) error {
 		log.Warnf("object store error: %s ", err.Error())
 		return err
 	}
-	objectStore, err := e.civoClient.GetObjectStoreByName(os.Spec.Name)
-	if err != nil {
-		err := errors.New(errGetObjectStore)
-		log.Warnf("object store get error: %s ", err.Error())
-		return err
-	}
-	os.SetConditions(xpv1.Deleting())
 
-	err = e.civoClient.DeleteObjectStore(objectStore.ID)
+	err := e.civoClient.DeleteObjectStore(os.Spec.Name)
 	if err != nil {
+		// Check if the error is because the object store was not found
+		if strings.Contains(err.Error(), "database_objectstore_not_found") {
+			log.Infof("object store %s not found, considering it as successfully deleted", os.Spec.Name)
+			return nil
+		}
 		log.Warnf("object store delete error: %s ", err.Error())
 		return errors.New(errDeleteObjectStore)
 	}
 
+	os.SetConditions(xpv1.Deleting())
 	return nil
 }
