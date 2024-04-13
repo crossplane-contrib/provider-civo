@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
@@ -96,16 +97,22 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 			Namespace: cr.Spec.ConnectionDetails.ConnectionSecretNamespace,
 			Name:      secretName,
 		}, connectionSecret)
+
 		if err != nil {
-			err = e.kube.Create(ctx, connectionSecret, &client.CreateOptions{})
-			if err != nil {
-				return managed.ExternalObservation{ResourceExists: true}, err
+			if k8serrors.IsNotFound(err) {
+				err = e.kube.Create(ctx, connectionSecret, &client.CreateOptions{})
+				if err != nil {
+					return managed.ExternalObservation{ResourceExists: true}, errors.Wrap(err, "failed to create connection secret")
+				}
+			} else {
+				return managed.ExternalObservation{ResourceExists: true}, errors.Wrap(err, "failed to get connection secret")
 			}
 		}
+
 		_, err = e.Update(ctx, mg)
 		if err != nil {
-			log.Warnf("update error:%s ", err.Error())
-			return managed.ExternalObservation{ResourceExists: true}, err
+			log.Warnf("update error: %s", err.Error())
+			return managed.ExternalObservation{ResourceExists: true}, errors.Wrap(err, "failed to update object store post-creation")
 		}
 		return managed.ExternalObservation{ResourceExists: true, ResourceUpToDate: true}, nil
 
