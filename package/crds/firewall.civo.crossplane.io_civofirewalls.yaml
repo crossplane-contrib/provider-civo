@@ -50,7 +50,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CivoFirewallSpec holds the specs for firewall resource
+            description: CivoFirewallSpec defines the desired state of a Firewall.
             properties:
               deletionPolicy:
                 default: Delete
@@ -94,11 +94,11 @@ spec:
                   type: string
                 type: array
               name:
-                description: Name that you wish to use to refer to this firewall.
+                description: Name is the name of the Firewall within Civo.
                 type: string
-              network_id:
-                description: NetworkID for the network with which the firewall is
-                  to be associated.
+              networkId:
+                description: NetworkID is the identifier for the network associated
+                  with the Firewall.
                 type: string
               providerConfigRef:
                 default:
@@ -251,6 +251,49 @@ spec:
                 required:
                 - name
                 type: object
+              region:
+                description: Region is the identifier for the region in which the
+                  Firewall is deployed.
+                type: string
+              rules:
+                description: Rules are the set of rules applied to the firewall.
+                items:
+                  description: FirewallRule defines the rules applied to the Firewall.
+                  properties:
+                    cidr:
+                      description: CIDR is the IP address range that is applicable
+                        for the rule.
+                      type: string
+                    direction:
+                      description: Direction indicates whether the rule is for inbound
+                        or outbound traffic.
+                      enum:
+                      - ingress
+                      - egress
+                      type: string
+                    endPort:
+                      description: EndPort is the ending port of the range.
+                      type: integer
+                    label:
+                      description: Label is an optional identifier for the rule.
+                      type: string
+                    protocol:
+                      description: Protocol used by the rule (TCP, UDP, ICMP).
+                      enum:
+                      - TCP
+                      - UDP
+                      - ICMP
+                      type: string
+                    startPort:
+                      description: StartPort is the starting port of the range.
+                      type: integer
+                  required:
+                  - cidr
+                  - direction
+                  - protocol
+                  - startPort
+                  type: object
+                type: array
               writeConnectionSecretToRef:
                 description: |-
                   WriteConnectionSecretToReference specifies the namespace and name of a
@@ -274,21 +317,30 @@ spec:
                 type: object
             required:
             - name
-            - network_id
+            - networkId
             - providerReference
+            - region
             type: object
           status:
-            description: CivoFirewallStatus status of the resource
+            description: CivoFirewallStatus defines the observed state of CivoFirewall.
             properties:
               atProvider:
-                description: CivoFirewallObservation observation fields
+                description: CivoFirewallObservation is used to reflect the observed
+                  state of the firewall.
                 properties:
                   id:
+                    description: ID is the Civo ID of the Firewall.
                     type: string
-                  name:
-                    type: string
+                  instanceCount:
+                    description: InstanceCount shows how many instances are using
+                      this firewall.
+                    type: integer
+                  rulesCount:
+                    description: RulesCount shows how many rules are associated with
+                      this firewall.
+                    type: integer
                 required:
-                - id
+                - rulesCount
                 type: object
               conditions:
                 description: Conditions of the resource.

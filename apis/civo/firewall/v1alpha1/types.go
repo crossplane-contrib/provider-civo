@@ -5,36 +5,77 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// CivoFirewallSpec holds the specs for firewall resource
+// CivoFirewallSpec defines the desired state of a Firewall.
 type CivoFirewallSpec struct {
 	xpv1.ResourceSpec `json:",inline"`
 
-	// Name that you wish to use to refer to this firewall.
-	// +required
-	// +immutable
+	// Name is the name of the Firewall within Civo.
 	// +kubebuilder:validation:Required
+	// +immutable
 	Name string `json:"name"`
 
-	// NetworkID for the network with which the firewall is to be associated.
-	// +required
-	// +immutable
+	// NetworkID is the identifier for the network associated with the Firewall.
 	// +kubebuilder:validation:Required
-	NetworkID string `json:"network_id"`
+	// +immutable
+	NetworkID string `json:"networkId"`
+
+	// Region is the identifier for the region in which the Firewall is deployed.
+	// +kubebuilder:validation:Required
+	Region string `json:"region"`
+
+	// Rules are the set of rules applied to the firewall.
+	// +optional
+	Rules []FirewallRule `json:"rules,omitempty"`
 
 	// ProviderReference holds configs (region, API key etc) for the crossplane provider that is being used.
 	ProviderReference *xpv1.Reference `json:"providerReference"`
 }
 
-// CivoFirewallObservation observation fields
-type CivoFirewallObservation struct {
-	ID   string `json:"id"`
-	Name string `json:"name,omitempty"`
+// FirewallRule defines the rules applied to the Firewall.
+type FirewallRule struct {
+	// Protocol used by the rule (TCP, UDP, ICMP).
+	// +kubebuilder:validation:Enum=TCP;UDP;ICMP
+	// +kubebuilder:validation:Required
+	Protocol string `json:"protocol"`
+
+	// StartPort is the starting port of the range.
+	// +kubebuilder:validation:Required
+	StartPort int `json:"startPort"`
+
+	// EndPort is the ending port of the range.
+	// +optional
+	EndPort *int `json:"endPort,omitempty"`
+
+	// CIDR is the IP address range that is applicable for the rule.
+	// +kubebuilder:validation:Required
+	CIDR string `json:"cidr"`
+
+	// Direction indicates whether the rule is for inbound or outbound traffic.
+	// +kubebuilder:validation:Enum=ingress;egress
+	// +kubebuilder:validation:Required
+	Direction string `json:"direction"`
+
+	// Label is an optional identifier for the rule.
+	// +optional
+	Label string `json:"label,omitempty"`
 }
 
-// CivoFirewallStatus status of the resource
+// CivoFirewallStatus defines the observed state of CivoFirewall.
 type CivoFirewallStatus struct {
 	xpv1.ResourceStatus `json:",inline"`
 	AtProvider          CivoFirewallObservation `json:"atProvider,omitempty"`
+}
+
+// CivoFirewallObservation is used to reflect the observed state of the firewall.
+type CivoFirewallObservation struct {
+	// ID is the Civo ID of the Firewall.
+	ID string `json:"id,omitempty"`
+
+	// InstanceCount shows how many instances are using this firewall.
+	InstanceCount *int `json:"instanceCount,omitempty"`
+
+	// RulesCount shows how many rules are associated with this firewall.
+	RulesCount int `json:"rulesCount"`
 }
 
 // +kubebuilder:object:root=true
@@ -77,7 +118,7 @@ func (mg *CivoFirewall) GetPublishConnectionDetailsTo() *xpv1.PublishConnectionD
 
 // +kubebuilder:object:root=true
 
-// CivoFirewallList contains a list of CivoFirewall
+// CivoFirewallList contains a list of CivoFirewall.
 type CivoFirewallList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
