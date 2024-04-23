@@ -277,18 +277,6 @@ func (c *CivoClient) DeleteK3sCluster(name string) error {
 	return err
 }
 
-// GetObjectStore fetches a object store by its ID.
-func (c *CivoClient) GetObjectStore(id string) (*civogo.ObjectStore, error) {
-	objectStore, err := c.civoGoClient.GetObjectStore(id)
-	if err != nil {
-		if strings.Contains(err.Error(), "ZeroMatchesError") {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return objectStore, nil
-}
-
 // CreateObjectStore creates object store.
 func (c *CivoClient) CreateObjectStore(name string, size int, accessKeyID string) (*civogo.ObjectStore, error) {
 	objectStore, err := c.civoGoClient.NewObjectStore(&civogo.CreateObjectStoreRequest{

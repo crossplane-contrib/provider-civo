@@ -49,7 +49,7 @@ type external struct {
 	civoClient *civocli.CivoClient
 }
 
-// nolint
+// nolint: gocyclo // Large function due to complex logic.
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
 	cr, ok := mg.(*v1alpha1.CivoObjectStore)
 	if !ok {
