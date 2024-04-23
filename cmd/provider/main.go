@@ -20,6 +20,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/crossplane-contrib/provider-civo/internal/controller/civonetwork"
+
 	"github.com/crossplane/crossplane-runtime/pkg/ratelimiter"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
@@ -58,7 +60,7 @@ func main() {
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 
 	zl := zap.New(zap.UseDevMode(*debug))
-	log := logging.NewLogrLogger(zl.WithName("provider-template"))
+	logger := logging.NewLogrLogger(zl.WithName("provider-template"))
 	ctrl.SetLogger(zap.New(zap.UseDevMode(true)))
 	if *debug {
 		// The controller-runtime runs with a no-op logger by default. It is
@@ -67,7 +69,7 @@ func main() {
 		ctrl.SetLogger(zl)
 	}
 
-	log.Debug("Starting", "sync-period", syncPeriod.String())
+	logger.Debug("Starting", "sync-period", syncPeriod.String())
 
 	cfg, err := ctrl.GetConfig()
 	kingpin.FatalIfError(err, "Cannot get API server rest config")
@@ -84,8 +86,9 @@ func main() {
 	rateLimiter := ratelimiter.NewGlobal(*maxReconcileRate)
 
 	kingpin.FatalIfError(apis.AddToScheme(mgr.GetScheme()), "Cannot add Template APIs to scheme")
-	kingpin.FatalIfError(civokubernetes.Setup(mgr, log, *rateLimiter), "Cannot setup Civo K3 Cluster controllers")
-	kingpin.FatalIfError(civoinstance.Setup(mgr, log, *rateLimiter), "Cannot setup Civo Instance controllers")
-	kingpin.FatalIfError(civoprovider.Setup(mgr, log, *rateLimiter), "Cannot setup Provider controllers")
+	kingpin.FatalIfError(civokubernetes.Setup(mgr, logger, *rateLimiter), "Cannot setup Civo K3 Cluster controllers")
+	kingpin.FatalIfError(civoinstance.Setup(mgr, logger, *rateLimiter), "Cannot setup Civo Instance controllers")
+	kingpin.FatalIfError(civoprovider.Setup(mgr, logger, *rateLimiter), "Cannot setup Provider controllers")
+	kingpin.FatalIfError(civonetwork.Setup(mgr, logger, *rateLimiter), "Cannot setup Civo Network controllers")
 	kingpin.FatalIfError(mgr.Start(ctrl.SetupSignalHandler()), "Cannot start controller manager")
 }
