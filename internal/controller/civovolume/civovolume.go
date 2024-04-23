@@ -36,13 +36,10 @@ import (
 )
 
 const (
-	errManagedUpdateFailed          = "cannot update volume custom resource"
 	errGenObservation               = "cannot generate observation"
 	errNotCivoVolume                = "managed resource is not a CivoVolume"
 	errCreateVolume                 = "cannot create Volume"
 	errDeleteVolume                 = "cannot delete Volume"
-	errUpdateVolume                 = "cannot update Volume"
-	errVolumeAttach                 = "cannot attach volume"
 	volumeStateAvailable            = "available"
 	volumeStatePendingInstanceStart = "pending_instance_start"
 	volumeStateAttached             = "attached"
