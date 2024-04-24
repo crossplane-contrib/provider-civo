@@ -7,6 +7,7 @@ import (
 	providerCivoCluster "github.com/crossplane-contrib/provider-civo/apis/civo/cluster/v1alpha1"
 	"github.com/crossplane-contrib/provider-civo/apis/civo/instance/v1alpha1"
 	v1alpha1provider "github.com/crossplane-contrib/provider-civo/apis/civo/provider/v1alpha1"
+	v1alpha1volume "github.com/crossplane-contrib/provider-civo/apis/civo/volume/v1alpha1"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -49,6 +50,19 @@ func GenerateObservation(instance *civogo.Instance) (v1alpha1.CivoInstanceObserv
 		}
 	}
 	return observation, nil
+}
+
+// GenerateVolumeObservation creates the CivoVolumeObservation from volume infos
+func GenerateVolumeObservation(volume *civogo.Volume) (*v1alpha1volume.CivoVolumeObservation, error) {
+	observation := v1alpha1volume.CivoVolumeObservation{
+		ID:         volume.ID,
+		InstanceID: volume.InstanceID,
+		Size:       volume.SizeGigabytes,
+		Status:     volume.Status,
+	}
+
+	return &observation, nil
+
 }
 
 // NewCivoClient creates a new Civo client.
@@ -259,6 +273,81 @@ func (c *CivoClient) DeleteK3sCluster(name string) error {
 	resp, err := c.civoGoClient.DeleteKubernetesCluster(kubernetesCluster.ID)
 	if err != nil {
 		log.Debugf("error [%s %s %s %s]", resp.Result, resp.ErrorDetails, resp.ErrorCode, resp.ErrorReason)
+	}
+	return err
+}
+
+// CreateVolume creates a volume on Civo.
+func (c *CivoClient) CreateVolume(name string, size int, networkID string, clusterID string, bootable bool) (*civogo.VolumeResult, error) {
+
+	cfgs := civogo.VolumeConfig{
+		Name:          name,
+		ClusterID:     clusterID,
+		NetworkID:     networkID,
+		Region:        c.civoGoClient.Region,
+		SizeGigabytes: size,
+		Bootable:      bootable,
+	}
+
+	volm, err := c.civoGoClient.NewVolume(&cfgs)
+
+	if err != nil {
+		return nil, err
+	}
+	return volm, err
+}
+
+// GetVolume gets a volume on Civo.
+func (c *CivoClient) GetVolume(volumeName string) (*civogo.Volume, error) {
+	volm, err := c.civoGoClient.GetVolume(volumeName)
+	if err != nil {
+		if strings.Contains(err.Error(), "DatabaseVolumeNotFoundError") {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return volm, nil
+}
+
+// DeleteVolume deletes a volume on Civo.
+func (c *CivoClient) DeleteVolume(name string) error {
+
+	volm, err := c.GetVolume(name)
+	if err != nil {
+		return err
+	}
+	if volm == nil {
+		return errors.New("no such volume exists")
+	}
+	resp, err := c.civoGoClient.DeleteVolume(volm.ID)
+	if err != nil {
+		log.Debugf("error [%s %s %s %s]", resp.Result, resp.ErrorDetails, resp.ErrorCode, resp.ErrorReason)
+	}
+	return err
+}
+
+// ResizeVolume deletes a volume on Civo.
+func (c *CivoClient) ResizeVolume(name string, size int) error {
+	volm, err := c.GetVolume(name)
+	if err != nil {
+		return err
+	}
+	if volm == nil {
+		return errors.New("no such volume exists")
+	}
+	resp, err := c.civoGoClient.ResizeVolume(volm.ID, size)
+	if err != nil {
+		log.Debugf("error [%s %s %s %s]", resp.Result, resp.ErrorDetails, resp.ErrorCode, resp.ErrorReason)
+	}
+	return err
+}
+
+// AttachVolume attaches a volume to an instance using their respective IDs.
+func (c *CivoClient) AttachVolume(volumeID string, instanceID string) error {
+	resp, err := c.civoGoClient.AttachVolume(volumeID, instanceID)
+	if err != nil {
+		log.Debugf("error [%s %s %s %s]", resp.Result, resp.ErrorDetails, resp.ErrorCode, resp.ErrorReason)
+		return errors.New("error attaching volume")
 	}
 	return err
 }
