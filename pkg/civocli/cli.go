@@ -290,7 +290,6 @@ func (c *CivoClient) DeleteK3sCluster(name string) error {
 	return err
 }
 
-
 // CreateObjectStore creates object store.
 func (c *CivoClient) CreateObjectStore(name string, size int, accessKeyID string) (*civogo.ObjectStore, error) {
 	objectStore, err := c.civoGoClient.NewObjectStore(&civogo.CreateObjectStoreRequest{
@@ -351,6 +350,7 @@ func (c *CivoClient) GetObjectStoreStats(id string) *civogo.ObjectStoreStats {
 		return nil
 	}
 	return stats
+}
 
 // CreateVolume creates a volume on Civo.
 func (c *CivoClient) CreateVolume(name string, size int, networkID string, clusterID string, bootable bool) (*civogo.VolumeResult, error) {
