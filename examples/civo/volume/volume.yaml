@@ -1,0 +1,11 @@
+apiVersion: volume.civo.crossplane.io/v1alpha1
+kind: CivoVolume
+metadata:
+  name: test-crossplane-volume
+spec:
+  size: 10
+  network_id: "85baa4f2-c244-4d4a-9a11-61d9d342dfd2"
+  instance_id: "fb5395c9-d304-4121-9a49-c406f753f500"
+  providerReference:
+    name: civo-provider
+  name: test-crossplane-volume

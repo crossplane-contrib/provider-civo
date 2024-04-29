@@ -12,7 +12,7 @@ kind: ProviderConfig
 metadata:
   name: civo-provider
 spec:
-  region: fra1
+  region: lon1
   credentials:
     source: Secret
     secretRef:
