@@ -33,6 +33,7 @@ import (
 
 	"github.com/crossplane-contrib/provider-civo/apis"
 	civokubernetes "github.com/crossplane-contrib/provider-civo/internal/controller/civokubernetes"
+	civoobjectStore "github.com/crossplane-contrib/provider-civo/internal/controller/civoobjectstore"
 	"github.com/crossplane-contrib/provider-civo/internal/controller/civovolume"
 	civoprovider "github.com/crossplane-contrib/provider-civo/internal/controller/provider"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
@@ -87,6 +88,7 @@ func main() {
 	kingpin.FatalIfError(apis.AddToScheme(mgr.GetScheme()), "Cannot add Template APIs to scheme")
 	kingpin.FatalIfError(civokubernetes.Setup(mgr, log, *rateLimiter), "Cannot setup Civo K3 Cluster controllers")
 	kingpin.FatalIfError(civoinstance.Setup(mgr, log, *rateLimiter), "Cannot setup Civo Instance controllers")
+	kingpin.FatalIfError(civoobjectStore.Setup(mgr, log, *rateLimiter), "Cannot setup Object Store controllers")
 	kingpin.FatalIfError(civovolume.Setup(mgr, log, *rateLimiter), "Cannot setup Civo volume controllers")
 	kingpin.FatalIfError(civoprovider.Setup(mgr, log, *rateLimiter), "Cannot setup Provider controllers")
 	kingpin.FatalIfError(mgr.Start(ctrl.SetupSignalHandler()), "Cannot start controller manager")
