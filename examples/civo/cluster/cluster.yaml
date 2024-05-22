@@ -7,14 +7,11 @@ spec:
   pools:
     - id: "8382e422-dcdd-461f-afb4-2ab67f171c3e"
       count: 2
-      size: g3.k3s.small
+      size: "g4s.kube.small"
     - id: "8482f422-dcdd-461g-afb4-2ab67f171c3e"
       count: 1
-      size: g3.k3s.small
-  applications: 
-    - "argo-cd"
-    - "prometheus-operator"
-  version: "1.22.2-k3s1"
+      size: "g4s.kube.small"
+  version: "v1.29.2-k3s1"
   connectionDetails:
     connectionSecretNamePrefix: "cluster-details"
     connectionSecretNamespace: "default"

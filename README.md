@@ -44,15 +44,30 @@ This will trigger the creation of another cluster in the destination region you 
 - [KinD installed](https://kind.sigs.k8s.io/docs/user/quick-start/) (optionally another Kubernetes cluster)
 - [Helm installed](https://helm.sh/)
 
-Set-up a Kubernetes cluster with Crossplane installed. The instructions can be found in the official [Crossplane documentation](https://crossplane.io/docs/v1.3/getting-started/install-configure.html#start-with-a-self-hosted-crossplane).
+Set-up a Kubernetes cluster with Crossplane installed. The instructions can be found in the official [Crossplane documentation](https://docs.crossplane.io/latest/software/install/).
 
-To add the Civo Provider Configuration Package, run:
+Once Crossplane is installed, the provider Configuration Package can be added.
 
-```console
-kubectl crossplane install provider xpkg.upbound.io/civo/provider-civo:v0.1
+To add the Civo Provider Configuration Package create a new manifest referencing the provider:
+
+`civo-provider.yaml`
+```
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-civo
+  namespace: crossplane-system
+spec:
+  package: xpkg.upbound.io/civo/provider-civo:v0.1
 ```
 
-In this case, we are going to follow the resources in the example repostory.
+Apply the resources to the cluster:
+
+```
+kubectl apply -f civo-provider.yaml
+```
+
+In this case, we are going to follow the resources in the example repository.
 
 Before creating a Provider resource, edit the API key in [provider.yaml](examples/civo/provider/provider.yaml). You can find the API key in your Civo account at [Settings > Profile > Security](https://dashboard.civo.com/security).
 
@@ -75,7 +90,6 @@ kubectl get civokubernetes.cluster.civo.crossplane.io
 NAME              READY   MESSAGE             APPLICATIONS
 test-crossplane   True    Cluster is active   ["argo-cd","prometheus-operator"]
 ```
-
 
 ### Connection details
 
