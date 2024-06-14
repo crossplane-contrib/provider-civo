@@ -145,6 +145,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		_, err = e.Update(ctx, mg)
 		if err != nil {
 			log.Warnf("update error:%s ", err.Error())
+			return managed.ExternalObservation{ResourceExists: true}, err
 		}
 		// --------------------------------------------
 		cr.SetConditions(xpv1.Available())
@@ -158,10 +159,10 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		cr.SetConditions(xpv1.Creating())
 		return managed.ExternalObservation{
 			ResourceExists:   true,
-			ResourceUpToDate: true,
+			ResourceUpToDate: false,
 		}, nil
 	}
-	return managed.ExternalObservation{}, nil
+	return managed.ExternalObservation{ResourceExists: false}, nil
 }
 
 func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
@@ -181,7 +182,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	// Create or Update
 	err = e.civoClient.CreateNewK3sCluster(cr.Spec.Name, convertedPools, cr.Spec.Applications, cr.Spec.CNIPlugin, cr.Spec.Version)
 	if err != nil {
-		return managed.ExternalCreation{}, err
+		return managed.ExternalCreation{ExternalNameAssigned: true}, err
 	}
 
 	cr.SetConditions(xpv1.Creating())
