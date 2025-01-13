@@ -14,6 +14,9 @@ type CivoInstanceConfig struct {
 	// +required
 	Size string `json:"size,omitempty"`
 
+	// +optional
+	NetworkID string `json:"networkID,omitempty"`
+
 	// +immutable
 	// +required
 	DiskImage string `json:"diskImage,omitempty"`

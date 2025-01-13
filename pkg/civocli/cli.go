@@ -120,6 +120,11 @@ func (c *CivoClient) CreateNewInstance(instance *v1alpha1.CivoInstance, sshPubKe
 	config.InitialUser = emptyIfNil(&instance.Spec.InstanceConfig.InitialUser)
 	config.PublicIPRequired = emptyIfNil(&instance.Spec.InstanceConfig.PublicIPRequired)
 
+	// Set custom network ID if specified
+	if instance.Spec.InstanceConfig.NetworkID != "" {
+		config.NetworkID = instance.Spec.InstanceConfig.NetworkID
+	}
+
 	if len(sshPubKey) > 0 {
 		if sshKey, err := c.civoGoClient.FindSSHKey(config.Hostname); err == nil {
 			config.SSHKeyID = sshKey.ID
