@@ -75,6 +75,8 @@ spec:
                     type: string
                   initialUser:
                     type: string
+                  networkID:
+                    type: string
                   notes:
                     type: string
                   publicIPRequired:
