@@ -123,6 +123,8 @@ spec:
                 type: array
               name:
                 type: string
+              networkID:
+                type: string
               pools:
                 items:
                   description: |-

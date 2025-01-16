@@ -157,6 +157,11 @@ func (in *CivoKubernetesSpec) DeepCopyInto(out *CivoKubernetesSpec) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.NetworkID != nil {
+		in, out := &in.NetworkID, &out.NetworkID
+		*out = new(string)
+		**out = **in
+	}
 	if in.ProviderReference != nil {
 		in, out := &in.ProviderReference, &out.ProviderReference
 		*out = new(v1.Reference)
